@@ -1,0 +1,466 @@
+\documentclass[12pt, reqno]{amsart}
+
+%%%%%%%%%%%%%%%%%%%%%  MY STUFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\makeatletter
+%\g@addto@macro{\endabstract}{\@setabstract}
+%\makeatother
+
+
+%\usepackage{epsfig}
+\usepackage{graphics, stackrel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\usepackage{amsfonts}
+\usepackage{natbib}
+\usepackage{enumitem}
+%font
+%\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{mathpazo}
+%\usepackage{tgpagella}
+
+%subfloats / figures
+\usepackage{caption}
+\usepackage{subcaption}
+
+% For pandas latex tables
+\usepackage{booktabs}
+
+
+\usepackage{fancyvrb}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\usepackage{mdwlist}
+
+\usepackage[citecolor=blue, colorlinks=true, linkcolor=blue]{hyperref}
+
+
+% lists
+\usepackage{enumitem}
+\setlist[enumerate]{itemsep=2pt,topsep=3pt}
+\setlist[itemize]{itemsep=2pt,topsep=3pt}
+\setlist[enumerate,1]{label=(\alph*)}
+
+\usepackage{mathrsfs}  % caligraphic
+%\usepackage{stix} 
+\usepackage{bbm}
+\usepackage{bm}        % bold symbols
+
+
+%% page layout
+\usepackage[left=1.25in, right=1.25in, top=1.0in, bottom=1.15in, includehead, includefoot]{geometry}
+
+% nice inequalities
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+
+% inner product
+\providecommand{\inner}[1]{\left\langle{#1}\right\rangle}
+\providecommand{\innerp}[1]{\left\langle{#1}\right\rangle_\pi}
+
+
+\usepackage[ruled, linesnumbered]{algorithm2e}
+
+%extra spacing
+\renewcommand{\baselinestretch}{1.25}
+
+%horizonal line
+\newcommand{\HRule}{\rule{\linewidth}{0.3mm}}
+
+% skip a line between paragraphs, no indentation
+\setlength{\parskip}{1.5ex plus0.5ex minus0.5ex}
+\setlength{\parindent}{0pt}
+
+% footnote without a maker (blfootnote)
+\newcommand\blfootnote[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup
+}
+
+\DeclareMathOperator{\Span}{span}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\DeclareMathOperator{\cl}{cl}
+%\DeclareMathOperator{\overset{\circ}}{int}
+\DeclareMathOperator{\Prob}{Prob}
+\DeclareMathOperator{\determinant}{det}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\graph}{graph}
+
+% mics short cuts and symbols
+\newcommand{\st}{\ensuremath{\ \mathrm{s.t.}\ }}
+\newcommand{\setntn}[2]{ \{ #1 : #2 \} }
+\newcommand{\fore}{\therefore \quad}
+\newcommand{\preqsd}{\preceq_{sd} }
+\newcommand{\toas}{\stackrel {\textrm{ \scriptsize{a.s.} }} {\to} }
+\newcommand{\tod}{\stackrel { d } {\to} }
+\newcommand{\tou}{\stackrel { u } {\to} }
+\newcommand{\toweak}{\stackrel { w } {\to} }
+\newcommand{\topr}{\stackrel { p } {\to} }
+\newcommand{\disteq}{\stackrel { \mathscr D } {=} }
+\newcommand{\eqdist}{\stackrel {\textrm{ \scriptsize{d} }} {=} }
+\newcommand{\iidsim}{\stackrel {\textrm{ {\sc iid }}} {\sim} }
+\newcommand{\1}{\mathbbm 1}
+\newcommand{\la}{\langle}
+\newcommand{\ra}{\rangle}
+\newcommand{\dee}{\,{\rm d}}
+\newcommand{\og}{{\mathbbm G}}
+\newcommand{\ctimes}{\! \times \!}
+\newcommand{\sint}{{\textstyle\int}}
+
+\newcommand{\given}{\, | \,}
+\newcommand{\A}{\forall}
+
+% d for integrals
+\newcommand*\diff{\mathop{}\!\mathrm{d}}
+\newcommand*\e{\mathrm{e}}
+
+
+% Special symbols and shortcuts
+\newcommand{\bmeta}{\bm{\eta}}
+\newcommand{\bmxi}{\bm{\xi}}
+
+\newcommand{\infot}{\fF_t}
+
+\newcommand{\pspace}{\mathscr{P}(\mathsf{X})}
+\newcommand{\cspace}{\mathscr{C}(\mathsf{X})}
+
+%\renewcommand{\times}{\! \times \!}
+
+\newcommand{\aA}{\mathscr A}
+\newcommand{\cC}{\mathscr C}
+\newcommand{\sS}{\mathcal S}
+\newcommand{\bB}{\mathscr B}
+\newcommand{\oO}{\mathcal O}
+\newcommand{\gG}{\mathcal G}
+\newcommand{\hH}{\mathcal H}
+\newcommand{\kK}{\mathcal K}
+\newcommand{\iI}{\mathcal I}
+\newcommand{\eE}{\mathcal E}
+\newcommand{\fF}{\mathscr F}
+\newcommand{\qQ}{\mathcal Q}
+\newcommand{\tT}{\mathcal T}
+\newcommand{\xX}{\mathcal X}
+\newcommand{\yY}{\mathcal Y}
+\newcommand{\rR}{\mathcal R}
+\newcommand{\zZ}{\mathcal Z}
+\newcommand{\wW}{\mathcal W}
+\newcommand{\uU}{\mathcal U}
+\newcommand{\lL}{\mathcal L}
+
+\newcommand{\mM}{\mathcal M}
+\newcommand{\dD}{\mathcal D}
+\newcommand{\pP}{\mathcal P}
+
+\newcommand{\vV}{\mathcal V}
+
+\newcommand{\Bsf}{\mathsf B}
+\newcommand{\Hsf}{\mathsf H}
+\newcommand{\Vsf}{\mathsf V}
+
+\newcommand{\BB}{\mathbbm B}
+\newcommand{\DD}{\mathbbm D}
+\newcommand{\RR}{\mathbbm R}
+\newcommand{\CC}{\mathbbm C}
+\newcommand{\QQ}{\mathbbm Q}
+\newcommand{\NN}{\mathbbm N}
+\newcommand{\GG}{\mathbbm G}
+\newcommand{\UU}{\mathbbm U}
+\newcommand{\TT}{\mathbbm T}
+\newcommand{\YY}{\mathbbm Y}
+\newcommand{\ZZ}{\mathbbm Z}
+\newcommand{\HH}{\mathbbm H}
+\newcommand{\MM}{\mathbbm M}
+\newcommand{\PP}{\mathbbm P}
+\newcommand{\EE}{\mathbbm E}
+
+
+\newcommand{\bH}{\mathbf H}
+\newcommand{\bT}{\mathbf T}
+
+\newcommand{\var}{\mathbbm V}
+
+\newcommand{\XX}{\mathsf X}
+\newcommand{\II}{\mathsf I}
+\newcommand{\WW}{\mathsf W}
+
+\renewcommand{\phi}{\varphi}
+\renewcommand{\epsilon}{\varepsilon}
+
+\newcommand{\bP}{\mathbf P}
+\newcommand{\bQ}{\mathbf Q}
+\newcommand{\bE}{\mathbf E}
+\newcommand{\bM}{\mathbf M}
+\newcommand{\bX}{\mathbf X}
+\newcommand{\bY}{\mathbf Y}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{axiom}{Axiom}[section]
+\newtheorem{example}{Example}[section]
+\newtheorem{remark}{Remark}[section]
+\newtheorem{notation}{Notation}[section]
+\newtheorem{assumption}{Assumption}[section]
+\newtheorem{condition}{Condition}[section]
+
+
+%\DeclareTextFontCommand{\emph}{\bfseries}
+
+%%%%%%%%%%%%%%%%%% end my preamble %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+
+\begin{document}
+
+
+\title{}
+
+
+
+
+\begin{center}
+    \LARGE 
+    Automatic Differentiation Methods for Analyzing Wealth-Consumption Ratios
+    and Stochastic Discount Factors\blfootnote{To be added}
+ 
+    \vspace{1em}
+
+    %\large
+    %Chase Coleman\textsuperscript{a}, Pablo Levi\textsuperscript{b}, John
+    %Stachurski\textsuperscript{c}, \\ Ole Wilms\textsuperscript{d} and Junnan Zhang\textsuperscript{e} \par \bigskip
+
+    %\small
+    %\textsuperscript{a} Research School of Economics, Australian National University \\ 
+    %\textsuperscript{b} Other affiliations to be added  \\ \bigskip
+
+    \normalsize
+    \today
+\end{center}
+
+
+\begin{abstract}
+    To be written
+    \vspace{1em}
+
+    \noindent
+    \textit{JEL Classifications:} D81, G11 \\
+    \textit{Keywords:} Asset pricing, wealth-consumption ratio, automatic differentiation
+\end{abstract}
+
+
+
+
+
+\maketitle
+
+
+%section
+\section{Introduction}
+
+To be added.  Background on Newton's algorithm in $\RR^N$.
+
+Let $f$ be a smooth map from $\RR^N$ to itself.  We want to find the $x \in
+\RR^N$ that solves $f(x)=x$.  Ordinary successive approximation uses
+%
+\begin{equation}
+    x_{k+1} = f(x_k)
+\end{equation}
+%
+Newton's method first sets $g(x) = f(x) -x$, so that we are seeking a root $x$
+satisfying $g(x)=0$, and then iterates on
+%
+\begin{equation}
+    x_{k+1} = g(x_k) + J(x_k)^{-1} g(x_k)
+\end{equation}
+%
+where $J(x)$ is the Jacobian of $g$ at $x$.
+
+\section{A Long Run Risk Model}
+
+Roadmap to be added.
+
+Consumption growth and the growth rate of the preference shock are given by
+the generic formulas
+%
+\begin{equation}
+    \label{eq:kappa}
+    g_{c, t+1}
+    = g_c(X_t, X_{t+1}, \xi_{t+1})
+    \quad \text{and} \quad
+    g_{\lambda, t+1}
+    = g_\lambda(X_t, X_{t+1}, \xi_{t+1}),
+\end{equation}
+%
+where $\{ X_t \}_{t \geq 0}$ is a discrete time Markov process on $\XX \subset \RR^d$, $\{
+\xi_t \}_{t \geq 1}$ is an {\sc iid} process supported on $\YY \subset \RR^k$,
+and $g_i \colon \XX \times \XX \times \YY \to \RR$ is continuous for
+each $i \in \{c, \lambda\}$.  The processes $\{X_t\}$  and $\{\xi_t\}$ are
+assumed to be independent.
+
+
+
+\subsection{The SSY Model}
+
+In the long run risk model of \cite{schorfheide2018identifying}, the state
+process takes the form 
+%
+\begin{equation*}
+    X_t := (h_{\lambda, t}, h_{c, t}, h_{z, t}, z_t)  
+\end{equation*}
+%
+where, for $i \in \{z, c, \lambda\}$,
+%
+\begin{align*}
+    h_{i, t+1}
+        & = \rho_i \, h_{i,t} + s_{i} \, \eta_{i, t+1}
+        \\
+    \sigma_{i,t} 
+        & = \phi_i \, \bar{\sigma} \, \exp(h_{i,t}),
+        \\
+    z_{t+1} 
+        & = \rho \, z_t + (1 - \rho^2)^{1/2} \, 
+                \sigma_{z, t} \, \epsilon_{t+1}
+\end{align*}
+%
+
+
+Consumption growth is given by 
+%
+\begin{equation}\label{eq:ssygc}
+    g_{c, t+1}
+    = \ln \frac{C_{t+1}}{C_t} 
+    = \mu_c + z_t + \sigma_{c, t} \, \xi_{c, t+1} .
+\end{equation}
+%
+The preference shock $\lambda_t$ grows as
+%
+\begin{equation*}
+    g_{\lambda, t+1}
+    = \ln \frac{\lambda_{t+1}}{\lambda_t} 
+    = h_{\lambda, t+1}.
+\end{equation*}
+%
+The innovations 
+%
+\begin{equation*}
+    \xi_{c, t}, \;\;  \epsilon_t, \text{ and } (\eta_{i, t})_{i \in \{z, c, \lambda\}}
+\end{equation*}
+%
+are all independent and standard normal.  
+
+Let $\HH$ be the linear operator defined by
+%
+\begin{equation}\label{eq:defk}
+    (\HH g)(x) = \EE_x 
+        \, g(X_{t+1})  \,
+        \exp
+        \left[ 
+            \theta g_{\lambda, t+1} + (1-\gamma) g_{c, t+1})
+        \right]
+\end{equation}
+%
+at each $x \in \XX$,  where $\EE_x$ conditions on $X_t = x$.
+
+
+From \cite{schorfheide2018identifying}, the stochatic discount factor process
+$(M_t)$ takes the form
+%
+\begin{equation}\label{eq:ssysdf}
+    M_{t+1} = 
+    \beta^\theta
+    \left(\frac{\lambda_{t+1}}{\lambda_t} \right)^\theta
+    \left(\frac{C_{t+1}}{C_t} \right)^{-\gamma}
+    \left(\frac{w(X_{t+1})}{w(X_t) - 1} \right)^{\theta - 1},
+\end{equation}
+%
+where $w(X_t)$ is the aggregate wealth-consumption ratio $w(X_t) := W_t / C_t$. 
+
+In the model, the this ratio obeys
+%
+\begin{equation*}
+    \beta^{\theta}
+    \EE_t
+    \left[
+    \left( \frac{\lambda_{t+1}}{\lambda_t} \right)^\theta
+        \left( \frac{C_{t+1}}{C_t} \right)^{1-\gamma}
+        \left( \frac{w(X_{t+1})}{w(X_t)-1} \right)^\theta
+    \right] = 1
+\end{equation*}
+%
+Rearranging the previous expression gives
+%
+\begin{equation*}
+    (w(X_t)-1)^\theta
+    = \beta^{\theta}
+    \EE_t
+    \left[
+    \left( \frac{\lambda_{t+1}}{\lambda_t} \right)^\theta
+        \left( \frac{C_{t+1}}{C_t} \right)^{1-\gamma}
+        w(X_{t+1})^\theta
+    \right].
+\end{equation*}
+%
+
+Conditioning on $X_t = x$, writing pointwise on $\XX$ and using the definition
+of $\HH$ yields $w = 1 + \beta \left( \HH w^\theta \right)^{1/\theta}$.  A
+function $w$ solves this equation if and only if $w$ is a fixed point
+of the operator $\TT$ defined by 
+%
+\begin{equation}\label{eq:wcop}
+    (\TT w) = 1 + \beta \,  (\HH w^\theta)^{1/\theta}.
+\end{equation}
+%
+
+For computation, the state process is distcretized onto a state space $S =
+\{x_1, \ldots, x_N\}$ of size $N \in \NN$ and the operator $\HH$ is
+represented by a matrix $\bH$, with 
+%
+\begin{equation}\label{eq:defkb}
+    \bH(n, n') = \sum_{n'=1}^N 
+        \,
+        \exp
+        \left\{ 
+            \theta g_\lambda(x_n, x_{n'}, \xi) 
+            + (1-\gamma) g_c(x_n, x_{n'}, \xi)
+        \right\}
+    \bP(n, n'),
+\end{equation}
+%
+where $\bP$ is an $N \times N$ matrix with  $\bP(n, n')$ representing the
+probability that the discretized state process transitions from state $x_n$ to
+state $x_{n'}$ in one unit of time.
+
+The discretization of $\TT$ is written as $\bT$ and the problem is to find the
+fixed point of 
+%
+\begin{equation}\label{eq:wcopd}
+    (\bT w) = 1 + \beta \,  (\bH w^\theta)^{1/\theta}
+\end{equation}
+%
+in the set of strictly positive vectors in $\RR^N$.
+
+
+
+
+
+\bibliographystyle{ecta}
+
+\bibliography{localbib}
+
+
+\end{document}

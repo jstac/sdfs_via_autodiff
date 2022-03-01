@@ -1,0 +1,2284 @@
+\documentclass[12pt, reqno]{amsart}
+
+%%%%%%%%%%%%%%%%%%%%%  MY STUFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\makeatletter
+%\g@addto@macro{\endabstract}{\@setabstract}
+%\makeatother
+
+
+%\usepackage{epsfig}
+\usepackage{graphics, stackrel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\usepackage{amsfonts}
+\usepackage{natbib}
+\usepackage{enumitem}
+%font
+%\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+%\usepackage{mathpazo}
+%\usepackage{tgpagella}
+
+%subfloats / figures
+\usepackage{caption}
+\usepackage{subcaption}
+
+% For pandas latex tables
+\usepackage{booktabs}
+
+
+\usepackage{fancyvrb}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\usepackage{mdwlist}
+
+\usepackage[citecolor=blue, colorlinks=true, linkcolor=blue]{hyperref}
+
+
+% lists
+\usepackage{enumitem}
+\setlist[enumerate]{itemsep=2pt,topsep=3pt}
+\setlist[itemize]{itemsep=2pt,topsep=3pt}
+\setlist[enumerate,1]{label=(\alph*)}
+
+\usepackage{mathrsfs}  % caligraphic
+%\usepackage{stix}  % caligraphic
+\usepackage{bbm}
+\usepackage{bm}        % bold symbols
+
+
+%% page layout
+\usepackage[left=1.25in, right=1.25in, top=1.25in, bottom=1.25in, includehead, includefoot]{geometry}
+
+% nice inequalities
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+
+% inner product
+\providecommand{\inner}[1]{\left\langle{#1}\right\rangle}
+\providecommand{\innerp}[1]{\left\langle{#1}\right\rangle_\pi}
+
+
+\usepackage[ruled, linesnumbered]{algorithm2e}
+
+%extra spacing
+\renewcommand{\baselinestretch}{1.25}
+
+%horizonal line
+\newcommand{\HRule}{\rule{\linewidth}{0.3mm}}
+
+% skip a line between paragraphs, no indentation
+\setlength{\parskip}{1.5ex plus0.5ex minus0.5ex}
+\setlength{\parindent}{0pt}
+
+% footnote without a maker (blfootnote)
+\newcommand\blfootnote[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup
+}
+
+\DeclareMathOperator{\Span}{span}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\cl}{cl}
+%\DeclareMathOperator{\overset{\circ}}{int}
+\DeclareMathOperator{\Prob}{Prob}
+\DeclareMathOperator{\determinant}{det}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\graph}{graph}
+
+% mics short cuts and symbols
+\newcommand{\st}{\ensuremath{\ \mathrm{s.t.}\ }}
+\newcommand{\setntn}[2]{ \{ #1 : #2 \} }
+\newcommand{\fore}{\therefore \quad}
+\newcommand{\preqsd}{\preceq_{sd} }
+\newcommand{\toas}{\stackrel {\textrm{ \scriptsize{a.s.} }} {\to} }
+\newcommand{\tod}{\stackrel { d } {\to} }
+\newcommand{\tou}{\stackrel { u } {\to} }
+\newcommand{\toweak}{\stackrel { w } {\to} }
+\newcommand{\topr}{\stackrel { p } {\to} }
+\newcommand{\disteq}{\stackrel { \mathscr D } {=} }
+\newcommand{\eqdist}{\stackrel {\textrm{ \scriptsize{d} }} {=} }
+\newcommand{\iidsim}{\stackrel {\textrm{ {\sc iid }}} {\sim} }
+\newcommand{\1}{\mathbbm 1}
+\newcommand{\la}{\langle}
+\newcommand{\ra}{\rangle}
+\newcommand{\dee}{\,{\rm d}}
+\newcommand{\og}{{\mathbbm G}}
+\newcommand{\ctimes}{\! \times \!}
+\newcommand{\sint}{{\textstyle\int}}
+
+\newcommand{\given}{\, | \,}
+\newcommand{\A}{\forall}
+
+% d for integrals
+\newcommand*\diff{\mathop{}\!\mathrm{d}}
+\newcommand*\e{\mathrm{e}}
+
+
+% Special symbols and shortcuts
+\newcommand{\bmeta}{\bm{\eta}}
+\newcommand{\bmxi}{\bm{\xi}}
+
+\newcommand{\infot}{\fF_t}
+
+\newcommand{\pspace}{\mathscr{P}(\mathsf{X})}
+\newcommand{\cspace}{\mathscr{C}(\mathsf{X})}
+
+%\renewcommand{\times}{\! \times \!}
+
+\newcommand{\aA}{\mathscr A}
+\newcommand{\cC}{\mathscr C}
+\newcommand{\dD}{\mathscr D}
+\newcommand{\bB}{\mathscr B}
+\newcommand{\oO}{\mathcal O}
+\newcommand{\gG}{\mathscr G}
+\newcommand{\hH}{\mathcal H}
+\newcommand{\kK}{\mathcal K}
+\newcommand{\iI}{\mathcal I}
+\newcommand{\mM}{\mathcal M}
+\newcommand{\eE}{\mathcal E}
+\newcommand{\fF}{\mathscr F}
+\newcommand{\qQ}{\mathcal Q}
+\newcommand{\tT}{\mathcal T}
+\newcommand{\xX}{\mathcal X}
+\newcommand{\yY}{\mathcal Y}
+\newcommand{\wW}{\mathcal W}
+\newcommand{\uU}{\mathcal U}
+\newcommand{\lL}{\mathcal L}
+\newcommand{\rR}{\mathcal R}
+\newcommand{\zZ}{\mathcal Z}
+
+\newcommand{\sS}{\mathscr S}
+
+\newcommand{\pP}{\mathcal P}
+
+\newcommand{\vV}{\mathcal V}
+
+\newcommand{\BB}{\mathbbm B}
+\newcommand{\RR}{\mathbbm R}
+\newcommand{\CC}{\mathbbm C}
+\newcommand{\QQ}{\mathbbm Q}
+\newcommand{\NN}{\mathbbm N}
+\newcommand{\GG}{\mathbbm G}
+\newcommand{\UU}{\mathbbm U}
+\newcommand{\YY}{\mathbbm Y}
+\newcommand{\ZZ}{\mathbbm Z}
+\newcommand{\KK}{\mathbbm K}
+\newcommand{\PP}{\mathbbm P}
+\newcommand{\EE}{\mathbbm E}
+\newcommand{\TT}{\mathbbm T}
+
+\newcommand{\var}{\mathbbm V}
+
+\newcommand{\II}{\mathbb I}
+\newcommand{\WW}{\mathbb W}
+
+\renewcommand{\phi}{\varphi}
+
+\newcommand{\XX}{\mathsf X}
+
+\newcommand{\bP}{\mathbf P}
+\newcommand{\bQ}{\mathbf Q}
+\newcommand{\bE}{\mathbf E}
+\newcommand{\bM}{\mathbf M}
+\newcommand{\bX}{\mathbf X}
+\newcommand{\bY}{\mathbf Y}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{axiom}{Axiom}[section]
+\newtheorem{example}{Example}[section]
+\newtheorem{remark}{Remark}[section]
+\newtheorem{notation}{Notation}[section]
+\newtheorem{assumption}{Assumption}[section]
+\newtheorem{condition}{Condition}[section]
+
+
+%\DeclareTextFontCommand{\emph}{\bfseries}
+
+%%%%%%%%%%%%%%%%%% end my preamble %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+
+\begin{document}
+
+
+\title{}
+
+
+
+
+\begin{center}
+    \LARGE 
+    Recursive Utility with Preference Shocks: \\
+    Existence and Uniqueness\blfootnote{The authors are grateful for research
+    assistance from Shu Hu, financial support from ARC grant FT160100423, and
+valuable feedback from seminar participants at Xiamen and John Hopkins
+Universities.  The usual disclaimer applies.}
+ 
+    \vspace{1em}
+
+    \large
+    John Stachurski,\textsuperscript{a}
+    Ole Wilms\textsuperscript{b} 
+    and
+    Junnan Zhang\textsuperscript{c} 
+    \par \bigskip
+
+    \small
+    \textsuperscript{a} Research School of Economics, Australian National University \\
+    \textsuperscript{b} Universit\"at Hamburg and Tilburg University  \\
+    \textsuperscript{c} Center for Macroeconomic Research at School of
+    Economics, and Wang Yanan Institute for Studies in Economics, Xiamen
+    University \\ \bigskip
+
+    \normalsize
+    \today
+\end{center}
+
+
+\begin{abstract}
+    This paper studies existence and uniqueness
+    of recursively defined utility in asset pricing models with preference shocks. We
+    provide conditions that clarify existence and uniqueness for a wide range of models,
+    including exact necessary and sufficient conditions
+    for the most standard formulations.  The conditions isolate the roles of preference
+    parameters, as well as the different risks that drive the
+    consumption and preference shock processes. One notable finding is that,
+    for agents who prefer early resolution of risk, introducing preference shocks
+    always relaxes the existence condition. This effect is 
+    large in common calibrations, so the presence of preference shocks makes
+    the existence of a solution significantly more likely. \vspace{1em}
+
+    \noindent
+    \textit{JEL Classifications:} D81, G11 \\
+    \textit{Keywords:} Asset pricing, recursive preferences, preference shocks, Epstein--Zin preferences, long-run risk
+\end{abstract}
+
+
+
+\maketitle
+
+\pagebreak
+%section
+\section{Introduction}
+
+Over the past decade, models that combine recursive preferences with
+preference shocks---often interpreted as demand shocks---have found a central
+place in the debate on how to reconcile observed asset price dynamics with
+time paths for dividends and other cash flows.  For many quantitative models,
+both recursive preferences and preference shocks are crucial to the generation of
+accurate time paths for prices and returns.  A sample of the literature can be
+found in \cite{Albuquerque2016}, \cite{basu2017uncertainty},
+\cite{schorfheide2018identifying}, \cite{chen2019search},
+\cite{GomezYaron2020}, \cite{deGroot2018}, \cite{creal2020bond}, and
+\cite{degroot2021valuation}.  In all of this work, recursive preferences are
+formulated via the Epstein--Zin specification.
+
+The success of this framework comes at the cost of substantial nonlinearities
+in expressions for lifetime utility, as well as for the equilibrium
+wealth-consumption ratio (which is central to the analysis of prices and
+returns, since it controls the stochastic discount factor that maps cash flows
+to prices).  As a result of these nonlinearities, it has hitherto been an open
+question as to whether or not the models described above have well-defined
+solutions at the stated parameterizations.
+
+%Existence and uniqueness in models with recursive preferences is a widely
+%discussed topic, see for example \cite{epstein1989risk},
+%\cite{marinacci2010unique}, \cite{hansen2012recursive},
+%\cite{marinacci2019unique}, \cite{Pohl2019}, and
+%\cite{borovicka2020necessary}. However, none of these papers allows for
+%preference shocks in the utility specification. \textcolor{red}{The previous
+  %two sentences are basically the same as ``Our paper builds on...'' on page
+  %4. Maybe this paragraph should just starts with how preference shocks are
+  %important?} As such shocks are crucial to explain asset price dynamics, see
+%\cite{Campbell1986}, \cite{Albuquerque2016},
+%\cite{schorfheide2018identifying}, \cite{chen2019search} and
+%\cite{GomezYaron2020}, settling the question of existence and uniqueness is
+%of particular importance. 
+
+
+This paper provides sufficient conditions for existence and uniqueness that
+are general enough to cover a wide range of models, including all of those
+listed above.  Moreover, for standard formulations of the preference shock
+that are commonly used in asset pricing models, we provide exact necessary and
+sufficient conditions. We also show that, when the conditions are violated,
+the models make no usable predictions (i.e., existence fails, rather than
+uniqueness).
+
+We find that the delineation between existence and nonexistence hinges on a
+stability coefficient that depends on the spectral radius of a valuation operator
+relative to three parameters appearing in Epstein--Zin preferences.  To
+facilitate calculation and interpretation of the stability coefficient, we use
+a local spectral radius theorem to show that, under a weak independence
+assumption which holds in many applications, the stability coefficient can be
+decomposed into three terms. These three terms depend on the rate of time
+preference, the time path for preference shocks and the dynamics of
+consumption growth respectively.  In this manner, we are able to isolate and
+separately analyze the roles of time preference, preference shocks and
+consumption dynamics.
+
+Through this decomposition, we show that, when intertemporal
+elasticity of  substitution (IES) is greater than one---as is commonly assumed in
+the asset pricing literature---risk aversion with respect to atemporal gambles
+implies that nontrivial preference shocks always loosen the existence
+condition. Intuitively, this is because, after adjusting for intertemporal
+elasticity of substitution, preference shocks can be seen as adding volatility
+to consumption.  Since risk averse agents dislike volatile consumption
+flows, nontrivial preference shocks suppress the wealth-consumption ratio,
+which acts against divergence. For risk averse agents with an IES smaller than
+one, the logic works in reverse. In this case, the income effect dominates the
+substitution effect, so agents choose a higher wealth-consumption ratio when
+preference shocks are added to the model. Hence preference shocks
+increase the likelihood that no stable solution exists.\footnote{To be more
+    specific, we show that preference shocks loosen the existence condition if
+    and only if the IES and the risk aversion coefficient are both greater
+    than one or both less than one. Incidentally, these are the two cases in
+which preference shocks can help explain the equity premium puzzle as shown by
+\cite{Albuquerque2016}.}
+
+
+We consider four applications to showcase our approach: the benchmark model of
+\cite{Albuquerque2016} with {\sc iid} normal consumption growth, a standard
+long-run risk model as in \cite{bansal2004risks} with preference shocks, the long-run risk model with
+multiple log-normal volatility processes of \cite{schorfheide2018identifying}
+and the long-run risk model with inflation expectations and multiple
+log-normal volatility processes of \cite{GomezYaron2020}. In all cases,
+preference shocks are independent of consumption growth and follow
+an AR(1) process. This allows us to isolate the effect of preference shocks
+on existence and uniqueness of recursive utility. For
+commonly used parameterizations of the models, the influence of preference
+shocks on existence is large and, in particular, it significantly dominates
+the effect of consumption risks. This implies that, for any subjective discount
+factor smaller than unity, a solution does exist. Furthermore, highly persistent and
+volatile preference shocks significantly relax the existence condition, so
+that a solution exists even for rapidly growing economies.
+
+We also show that if the IES approaches 1 from above, the stability
+coefficient diverges to minus infinity. This implies that for an IES
+sufficiently close but larger than 1, a solution always exists. In contrast, if
+the IES approaches 1 from below, the stability coefficient diverges to
+infinity and we have non-existence. These results are in line with
+\cite{deGroot2018}, who show that the influence of preference shocks on model
+outcomes can become arbitrarily large for an IES close to one. In response,
+\cite{degroot2021valuation} use an alternative utility specification to
+include preference shocks into an asset pricing model with Epstein-Zin
+preferences. We provide sufficient conditions for existence and uniqueness for
+this specification as well. 
+
+Our paper builds on a large literature that deals with the problem
+of existence and uniqueness of recursive utility, with prominent examples
+including \cite{epstein1989risk}, \cite{boyd1990recursive},
+\cite{marinacci2010unique}, \cite{hansen2012recursive},
+\cite{bauerle2018stochastic}, \cite{becker2018recursivei},
+\cite{becker2018recursiveii}, \cite{marinacci2019unique}, \cite{Pohl2019},
+\cite{borovicka2020necessary}, \cite{balbus2020recursive},
+\cite{bloise2021not} and \cite{christensen2022existence}. However, none of
+these papers considers preference shocks. This paper explicitly includes
+preference shocks in the utility specification and focuses directly on the
+connection between preference shocks and existence and uniqueness of
+recursive utility. As our approach does not require strong assumptions on the
+underlying consumption process, it can also handle cases in which preference
+shocks are added to models that rely on other risk factors such as models
+with consumption disasters as in \cite{Barro2009} and \cite{Wachter2013},
+models with volatility of volatility as in \cite{Bollerslev2009} and
+\cite{Bollerslevetal2015} and models with jumps in volatility and growth
+rates as in \cite{DrechslerYaron11}.
+
+
+%There are many papers dealing with the problem
+%of existence and uniqueness of recursive utility, with prominent examples
+%including \cite{epstein1989risk}, \cite{boyd1990recursive},
+%\cite{marinacci2010unique}, \cite{hansen2012recursive},
+%\cite{bauerle2018stochastic}, \cite{becker2018recursivei},
+%\cite{becker2018recursiveii}, \cite{marinacci2019unique}, \cite{Pohl2019},
+%\cite{borovicka2020necessary}, \cite{balbus2020recursive},
+%\cite{bloise2021not} and \cite{christensen2022existence}. However, none of
+%these papers considers preference shocks. In contrast, this paper explicitly
+%includes preference shocks in the utility specification and focuses directly
+%on the connection between preference shocks and existence and uniqueness of
+%recursive utility.
+%
+%In this paper we build on earlier work by \cite{borovicka2020necessary} to
+%provide tight conditions for existence and uniqueness of recursive utilities,
+%as well as for the wealth-consumption ratio.  While
+%\cite{borovicka2020necessary} failed to encompass preference shocks, we
+%include them directly, under alternative specifications.  In all cases, we
+%provide sufficient conditions for existence and uniqueness.  In the most
+%standard formulation, we provide exact necessary and sufficient conditions.
+%We also show that, when the conditions are violated, it is existence that
+%fails, rather than uniqueness.
+
+%The references \cite{deGroot2018} and \cite{degroot2021valuation} mentioned
+%above are closely related to our research.  The focus of these papers is on
+%stability and interpretation of Epstein--Zin recursive utility in an asset
+%pricing setting under different specifications of preference shocks.
+%However, they do not provide explicit results on existence and uniqueness of
+%recursive utility, which is the primary focus of this paper.
+
+Our work is also related to \cite{stachurski2021dynamic}, who study dynamic
+programming with state-dependent discounting. Although preference shocks can
+be treated as state-dependent discounting, their focus is on the dynamic
+programming problem in which consumption of the agent is endogenous. We also
+develop new analytical tools in this paper that allow for exact necessary and
+sufficient conditions under a full set of parameters, while
+\cite{stachurski2021dynamic} give only sufficient conditions under a
+restricted set of parameters. As a result, we are able to settle the issue of
+existence and uniqueness for all standard-form asset pricing models with preference shocks
+considered in the applications.
+
+The rest of the paper is structured as follows. Section~\ref{s:env} sets out
+the model. Section~\ref{s:results} provides our main results.
+Section~\ref{stab_coef} decomposes the stability coefficient.
+Section~\ref{s:app} discusses applications. Section~\ref{s:alt_spec} studies
+the alternative specification proposed in \cite{deGroot2018}.
+Section~\ref{s:conclusion} concludes. The proofs are in the appendix.
+
+\section{Environment}\label{s:env}
+
+We consider an endowment economy containing a representative agent with
+Epstein-Zin preferences (see~\cite{epstein1989risk}
+and~\cite{weil1990nonexpected}). We begin by introducing preference shocks
+using the formulation of \cite{Albuquerque2016} and
+\cite{schorfheide2018identifying}, where preferences are defined recursively
+by
+%
+\begin{equation}
+    \label{eq:agg}
+    V_t = \left[
+            (1 - \beta) \lambda_t C_t^{1-1/\psi}
+            + \beta \left\{ \rR_{t, 1-\gamma} \left(V_{t+1}
+            \right) \right\}^{1-1/\psi}
+          \right]^{1/(1-1/\psi)}.
+\end{equation}
+%
+Here 
+%
+\begin{itemize}
+    \item $\{ C_t \}_{t \geq 0}$ is a consumption path,
+    \item $\{ \lambda_t \}_{t \geq 0}$ is a sequence of preference shocks,
+    \item $V_t$ is the utility value of the path extending on from time $t$ and 
+    \item $\rR_{t, 1-\gamma}$ is the Kreps--Porteus certainty equivalent operator
+        conditional on time $t$ information, defined by
+    %
+    \begin{equation}
+        \label{eq:ce}
+        \rR_{t, 1-\gamma}(V_{t+1})
+        = ( \EE_t  V^{1-\gamma}_{t+1} )^{1/(1-\gamma)}.
+    \end{equation}
+    %
+\end{itemize}
+
+The parameter $\beta \in (0, 1)$ is a time discount factor, while $\gamma
+\not=1$ governs risk aversion and $\psi \not=1$ is the elasticity of
+intertemporal substitution.  We take the consumption stream and sequence of
+preference shocks as given and seek a solution for utility $V_t$. Consumption
+growth and the growth rate of the preference shock are given by the generic
+formulas
+%
+\begin{equation}
+    \label{eq:kappa}
+    \ln \left( \frac{C_{t+1}}{C_t} \right)
+    = g_c(X_t, X_{t+1}, \xi_{t+1})
+    \quad \text{and} \quad
+    \ln \left( \frac{\lambda_{t+1}}{\lambda_t} \right) 
+    = g_\lambda(X_t, X_{t+1}, \xi_{t+1}),
+\end{equation}
+%
+where 
+%
+\begin{itemize}
+    \item $\{ X_t \}_{t \geq 0}$ is a discrete time Markov process on a compact
+        metric space $\XX$,
+    \item $\{ \xi_t \}_{t \geq 1}$ is an {\sc iid} process supported on $\YY \subset \RR^k$, and
+    \item $g_i \colon \XX \times \XX \times \YY \to \RR$ is continuous for
+        each $i \in \{c, \lambda\}$.
+\end{itemize}
+%
+The processes $\{X_t\}$  and $\{\xi_t\}$ are assumed to be independent.
+
+\begin{remark}
+    The assumption that typically binds in the list given above is compactness of
+    the state space $\XX$.  However, for stationary models, this assumption holds if we truncate
+    innovations to lie within any given interval. Moreover, all
+    applications that we consider here use standard normal innovations (although the
+    resulting state process can, of course, be non-Gaussian).  If all standard
+    normal innovations are truncated to lie in the interval $[-k, k]$ then,
+    for any form of quantitative analysis, the exogenous state process
+    becomes indistinguishable from the original whenever $k \geq 10$,
+    say.\footnote{There is no need for---and we do not use---explicit
+        truncation in computational analysis, since every numerical
+        implementation inherently truncates to the range of 64 bit
+        floats.}
+\end{remark}
+
+The state process $\{ X_t\}$ updates according to transition density $q$, in
+the sense that
+%
+\begin{equation}\label{eq:defq}
+    \PP\{X_{t+1} \in B \given X_t = x\}
+    = \int_B q(x, y) \, \diff y
+\end{equation}
+%
+for every $x \in \XX$ and Borel set $B \subset \XX$.
+In applications, either $\XX$ is a subset of $\RR^j$, and integration is with
+respect to Lebesgue measure, or $\XX$ is discrete. In the second case, we
+understand the integral in \eqref{eq:defq} as a sum, and $q$ is a transition
+matrix. Let $q^n$ denote the $n$-step transition density, which gives transition
+probabilities over $n$ units of time.
+%
+\begin{assumption}\label{a:q}
+    The process $\{ X_t \}_{t \geq 0}$ is stationary, with $X_t \eqdist \pi$ for
+    all $t \geq 0$.  The transition density $q$ is continuous on $\XX \times
+    \XX$ and there exists an $\ell \in \NN$ such that $q^\ell$ is everywhere
+    positive.
+\end{assumption}
+%
+In computer implementations, where $\XX$ is necessarily finite,
+Assumption~\ref{a:q} is equivalent to the statement that $q$ is aperiodic and
+irreducible.\footnote{In the discrete setting, we adopt the discrete topology,
+so $q$ and all other functions on the state are automatically continuous.}
+
+
+\section{Geometric Stability}\label{s:results}
+
+In this section we present our main results on the solution of \eqref{eq:agg}.
+
+\subsection{Set Up}
+
+In order to obtain a stationary solution for recursive utility, our first step
+is to normalize $\{V_t\}$ by dividing out the growing components $\{C_t\}$ and
+$\{\lambda_t\}$.  This leads us to introduce the transformed variable
+%
+\begin{equation}\label{eq:gdef}
+    G_t := \frac{1}{\lambda_t^\theta} \left( \frac{V_t}{C_t} \right)^{1-\gamma}
+    \quad \text{where} \quad
+    \theta := \frac{1-\gamma}{1-1/\psi} .
+\end{equation}
+%
+Although this particular normalization is not a standard choice, it
+possesses one major advantage: when the recursion for utility is expressed in
+terms of $\{G_t\}$ instead of $\{V_t\}$, the 
+nonlinear components of the evaluation and linear components naturally
+separate.  In our main results,  we exploit this
+separation to obtain sharp conditions for existence and uniqueness of
+solutions.
+
+To see how this works, we 
+divide \eqref{eq:agg} by $\lambda_t C_t^{1-1/\psi}$
+and use the definition of $G_t$ to rewrite 
+\eqref{eq:agg} as
+%
+\begin{equation}\label{eq:agg2}
+    G_t = 
+    F 
+    \left[ 
+        \,
+        \EE_t \, G_{t+1}  \,
+        \exp
+        \left\{ 
+            \theta g_\lambda(X_t, X_{t+1}, \xi_{t+1})
+            + (1-\gamma) g_c(X_t, X_{t+1}, \xi_{t+1})
+        \right\}
+        \,
+    \right],
+\end{equation}
+%
+where
+%
+\begin{equation*}
+    F(t) :=
+        \left(
+            1-\beta + \beta \, t^{1/\theta} 
+        \right)^\theta 
+        \qquad (t \geq 0).
+\end{equation*}
+%
+
+If $\theta < 0$, we set $F(0)=0$, which makes $F$ continuous.
+Figure~\ref{f:w} shows that $F$ is either concave increasing or convex
+increasing, depending on the value of $\theta$.\footnote{In the figure we set
+$\beta = 0.5$.  Any $\beta \in (0,1)$ produces the same basic shape properties.}
+%
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{figs/w.pdf}
+    \caption{\label{f:w} Shape properties of $F$.}
+\end{figure}
+%
+Evidently, any solution $\{ G_t \}$ to \eqref{eq:agg2} yields a solution $\{
+ V_t \}$  to the original utility problem \eqref{eq:agg}, which can be
+ obtained by unwinding the transformation in \eqref{eq:gdef}. Note that by
+ assuming $\psi \neq 1$, we rule out  cases where $\theta \to \pm \infty$, as
+ $\{ V_t \}$ is not defined for $\psi \neq 1$ (see \cite{deGroot2018}). 
+
+\subsection{Existence and Uniqueness}
+
+To study solutions to \eqref{eq:agg2}, we take $\cC$ to be the set of continuous
+everywhere positive functions on $\XX$.  In what follows, a \emph{stationary
+Markov solution} to \eqref{eq:agg2} is a $g \in \cC$ such that the stochastic
+process $\{G_t\} := \{g(X_t)\}$ satisfies \eqref{eq:agg2} with probability one
+for all $t \geq 0$.  For any operator $\TT \colon \cC \to \cC$, we call $\TT$
+\emph{globally geometrically stable} on $\cC$ if $\TT$ has a unique fixed point $g^*
+\in \cC$ and, for all $g \in \cC$, there exists an $a <
+1$ and $N < \infty$ such that
+%
+\begin{equation}
+    \sup_{x \in \XX} | (\TT^n g)(x) - g^*(x) |
+    \leq a^n N
+    \;
+    \text{ for all } n \in \NN.
+\end{equation}
+%
+
+Let $\KK$ be the linear operator defined by
+%
+\begin{equation}\label{eq:defk}
+    (\KK g)(x) = \EE_x \left[
+        \, g(X_{t+1})  \, \Gamma(X_t, X_{t+1}, \xi_{t+1})
+    \right]
+    \qquad (x \in \XX),
+\end{equation}
+%
+where $\EE_x$ conditions on $X_t = x$ and we use the notation
+%
+\begin{equation}\label{eq:sdef}
+    \Gamma(x, y, \xi) 
+    :=  \exp
+    \left\{ 
+        \theta g_\lambda(x, y, \xi) + (1-\gamma) g_c(x, y, \xi)
+    \right\}.
+\end{equation}
+%
+The operator $\KK$ applies a form of linear discounting to rewards one period
+in the future. In order for $\KK$ to be well defined, we assume that $\EE_\xi
+\Gamma(x, y, \xi)$ is finite for all $x, y \in \XX$, where $\EE_\xi$ denotes
+the expectation with respect to $\xi$.\footnote{In other words, the
+  discounting is expected to be finite, which is a rather weak assumption and
+  is satisfied in all the applications we consider.}
+
+Let $\TT
+\colon \cC \to \cC$ be the (modified) \emph{Koopman operator} defined by $\TT =
+F \circ \KK$.  More explicitly,
+%
+\begin{equation}\label{eq:deft}
+    (\TT g)(x) = F [ (\KK g)(x)]
+    \qquad (g \in \cC, \; x \in \XX).
+\end{equation}
+%
+By construction, $g \in \cC$ is a stationary Markov solution to
+\eqref{eq:agg2} if and only if $g$ is a fixed point of $\TT$.
+As we show in the appendix, $\TT$ is monotone increasing and either
+convex or concave, depending on the value of $\theta$.  As a result, we can
+analyze its fixed points and stability properties using the theory of monotone
+concave operators and monotone convex operators.\footnote{For an overview of
+    the literature, see \cite{zhang2013}, or the earlier work by
+    \cite{krasnoselskii1964}.  The specific fixed point result that we use
+    below is a modified version of a theorem due to \cite{du1990fixed}.}
+
+The basic intuition can already be seen in Figure~\ref{f:w}, since $F$ has
+these same properties (i.e., monotonicity and convexity or concavity).  The
+map $F$ has a unique fixed point in the interior of its domain whenever $F(t)
+> t$ for small positive $t$ and $F(t) < t$ for all sufficiently large $t$.  It
+is also clear from the figures that, when these boundary conditions are
+satisfied,  $F^n(t)$ converges to the unique fixed point as $n \to \infty$ for
+any $t > 0$.
+
+While this intuition speaks only to $F$, the operator $\KK$ is linear and
+monotone increasing, so the composition $\TT = F \circ \KK$ inherits the
+monotonicity and convexity (or concavity) properties of $F$.  As a result,
+existence of a unique stationary Markov solution depends on an analogous set
+of boundary conditions for $\TT$, where small functions are mapped strictly up
+and large functions are mapped strictly down.  Whether or not these boundary
+conditions hold depends both on the parameters in $F$ and the properties of
+the operator $\KK$.  
+
+Regarding the properties of $\KK$ it turns out that, to analyze these boundary
+conditions, it is enough to study the spectral radius of $\KK$, which we denote
+by $r(\KK)$.\footnote{The appendix clarifies the definition of the spectral
+radius used here and below.} In stating our main theorem, we let
+%
+\begin{equation}\label{eq:blam}
+    \sS := \ln \beta + \frac{\ln r(\KK)}{\theta}.
+\end{equation}
+%
+
+The content of the next theorem is that the boundary conditions for $\TT$
+discussed above hold if and only if $\sS < 0$.
+
+\begin{theorem}\label{t:bk}
+    If Assumption~\ref{a:q} holds, then the following statements are equivalent:
+    %
+    \begin{enumerate}
+        \item[{\rm (a)}] $\sS < 0$.
+        \item[{\rm (b)}] $\TT$ is globally geometrically stable on $\cC$.  
+    \end{enumerate}
+    %
+    Moreover, if $\sS \geq 0$, then no stationary Markov solution exists in
+    $\cC$.
+\end{theorem}
+
+Theorem~\ref{t:bk} provides an exact dichotomy. If $\sS < 0$,  then a unique
+and globally attracting stationary Markov solution $g^*$ exists in $\cC$.  On
+the other hand, if $\sS < 0$ fails, then not only does global geometric
+stability fail, but existence fails, specifically.  
+
+
+\subsection{The Wealth-Consumption Ratio}
+
+Next we study the wealth-consumption ratio, the significance of which was
+discussed in the introduction.
+In this model, the equilibrium wealth-consumption ratio $w(X_t) = W_t / C_t$
+obeys
+%
+\begin{equation*}
+    \beta^{\theta}
+    \EE_t
+    \left[
+    \left( \frac{\lambda_{t+1}}{\lambda_t} \right)^\theta
+        \left( \frac{C_{t+1}}{C_t} \right)^{1-\gamma}
+        \left( \frac{w(X_{t+1})}{w(X_t)-1} \right)^\theta
+    \right] = 1
+\end{equation*}
+%
+(see, e.g.,  \cite{schorfheide2018identifying}).  
+
+Rearranging the previous expression gives
+%
+\begin{equation*}
+    (w(X_t)-1)^\theta
+    = \beta^{\theta}
+    \EE_t
+    \left[
+    \left( \frac{\lambda_{t+1}}{\lambda_t} \right)^\theta
+        \left( \frac{C_{t+1}}{C_t} \right)^{1-\gamma}
+        w(X_{t+1})^\theta
+    \right].
+\end{equation*}
+%
+Conditioning on $X_t = x$ and writing pointwise on $\XX$ yields $w = 1 +
+\beta \left( \KK w^\theta \right)^{1/\theta}$.  A function $w \in \cC$ solves
+this equation if and only if $w$ is a fixed point of the operator $\UU \colon
+\cC \to \cC$ defined by 
+%
+\begin{equation}\label{eq:wcop}
+    (\UU w) = 1 + \beta \,  (\KK w^\theta)^{1/\theta}.
+\end{equation}
+%
+
+By proving a topological conjugacy relationship between $\UU$ and $\TT$, we
+establish the following result.
+
+\begin{proposition}\label{p:wcr}
+    $\UU$ has the same stability properties as $\TT$.  In particular, when
+    Assumption~\ref{a:q} holds, $\UU$ is globally geometrically stable on
+    $\cC$  if and only if $\sS < 0$.
+\end{proposition}
+
+% In practice, in the applications below, we iterate with $\UU$ rather than
+% $\TT$, since our main interest is in computing the wealth-consumption
+% ratio. 
+
+Inspecting the relationship between the wealth-consumption ratio and
+recursive utility also sheds light on the existence issue discussed in the
+previous section. For this model, the wealth-consumption ratio satisfies
+%
+\begin{equation}\label{eq:wc}
+    w(X_t) = \frac{W_t}{C_t} 
+    % = \frac{1}{1-\beta} 
+    % \frac{1}{\lambda_t} \left(\frac{V_t}{C_t}\right)^{1-\frac{1}{\psi}} 
+    = \frac{1}{1-\beta} g(X_t)^{1/\theta},
+\end{equation}
+%
+or equivalently, $g(X_t) = (1-\beta)^\theta w(X_t)^\theta$. There is no
+solution $g \in \cC$ if the wealth-consumption ratio diverges at some
+states, regardless of whether $\theta > 0$ or $\theta < 0$.\footnote{When
+  $\theta < 0$, $g \to \infty$ implies $g = 0$ at some states, which means
+  that $g \notin \cC$. Note that $W_t/C_t \geq 1$ by definition, so the
+  wealth-consumption ratio becoming too low will not affect existence.} This
+observation can help explain the existence condition in the applications
+below, since the wealth-consumption ratio is directly affected by model
+parameters.
+
+
+\section{Decomposition of the Stability Exponent}\label{stab_coef}
+
+In this section, we show that, under an independence condition, the stability
+coefficient $\sS$ can be decomposed into three terms.  In stating the result, we
+use the notation
+    $\rR_a (Y) := \left(\EE Y^a \right)^{1/a}$
+for any nonzero $a \in \RR$ and positive random variable $Y$.
+
+
+\begin{proposition}\label{p:d}
+    Let the conditions of Assumption~\ref{a:q} hold.  If $\{ C_t \}$ and $\{
+    \lambda_t \}$ are independent, then the stability coefficient $\sS$ admits
+    the alternative representation
+    %
+    \begin{equation}\label{eq:la}
+        \sS = \ln \beta 
+            + \sS_\lambda 
+            + \left(1-\frac{1}{\psi}\right) \sS_c,
+    \end{equation}
+    where
+    %
+    \begin{equation}\label{eq:mm}
+        \sS_\lambda
+        := \lim_{T \to \infty}
+        \frac{1}{T} \ln 
+        \rR_\theta \left( \frac{\lambda_T}{\lambda_0} \right)
+        \quad \text{and} \quad
+        \sS_c
+        := \lim_{T \to \infty}
+        \frac{1}{T} \ln 
+        \rR_{1-\gamma} \left( \frac{C_T}{C_0} \right).
+    \end{equation}
+    %
+\end{proposition}
+
+Proposition~\ref{p:d} separates the influence of the time preference parameter
+$\beta$, the preference shocks $\{ \lambda_t \}$ and the consumption path $\{
+C_t \}$ on existence and uniqueness of recursive utility. Note that if there are no
+preference shocks, then $\lambda_t = 1$ for all $t$ and $\sS_\lambda = 0$. The proof of
+Proposition~\ref{p:d} uses a local spectral radius theorem, which is employed
+to obtain an alternative representation of the spectral radius $r(\KK)$ of
+$\KK$.  (See the appendix for details.)
+
+The independence condition required by Proposition~\ref{p:d} holds in many
+(but not all) applications.\footnote{Exceptions include the extended model in
+    \cite{Albuquerque2016} and the model of \cite{creal2020bond}.} The
+    applications we consider in this paper all satisfy the condition.\footnote{The
+        independence condition might seem problematic in our setup, given
+        \eqref{eq:kappa}, which suggests that consumption growth and
+        preference shocks depend on the same variables. However, in standard
+        applications, it is commonly the case that $\{X_t\}$ and $\{\xi_t\}$
+        are vector-valued with at least some independent components, and
+        consumption and the preference shock are separated across these
+    components (i.e., the components that drive the preference shock are
+independent of the components that drive consumption).}
+
+\begin{proposition}\label{p:ss}
+    If the growth rate of $\{\lambda_t\}$ has zero mean, then $\sS_\lambda \cdot \theta  \geq 0$.
+\end{proposition}
+
+\begin{proof}
+    In view of \eqref{eq:kappa}, we have
+    %
+    \begin{equation*}
+        \sS_\lambda 
+        = \lim_{T \to \infty} \frac{1}{T}
+            \ln \rR_\theta \left( \frac{\lambda_T}{\lambda_0} \right)
+        =  \frac{1}{\theta}
+             \lim_{T \to \infty} \frac{1}{T}
+             \ln \EE \exp \left( \theta \sum_{t=1}^T g_t \right),
+    \end{equation*}
+    % 
+    where $g_t := g_\lambda(X_{t-1}, X_t, \xi_t)$.  Since $g_t$ has zero mean,
+    so does $Z_T := \theta \sum_{t=1}^T g_t$.  As a result, $\ln \EE \exp
+    (Z_T) \geq 0$.\footnote{If $Z$ satisfies $\EE Z = 0$,
+        then, by Jensen's inequality, $0 = \EE \ln \exp(Z) \leq \ln \EE
+    \exp(Z)$.}  It follows directly that $\sS_\lambda \cdot \theta  \geq 0$.
+\end{proof}
+%
+The key implication of Proposition~\ref{p:ss} is that the sign of
+$\sS_\lambda$ switches with $\theta$.  If $\theta \leq 0$, then $\sS_\lambda
+\leq 0$, so adding preference shocks always lowers the stability coefficient
+$\sS$ and loosens the existence condition.  If $\theta \geq 0$, then the
+reverse is true.
+
+Proposition~\ref{p:ss} matches observations previously made in some special
+cases.  If $\theta \leq 0$, mean zero preference shocks lower the mean
+wealth-consumption ratio  (see \cite{Albuquerque2016} and
+\cite{schorfheide2018identifying}).  A lower wealth-consumption ratio also
+implies that a solution is more likely in this case, as shown in \eqref{eq:wc}.
+
+If $\theta \geq 0$, it follows that $\sS_\lambda \geq 0$, so adding
+preference shocks tightens the existence condition. In this case, the income
+effect dominates the substitution effect so adding preference shocks
+increases the wealth-consumption ratio.\footnote{In terms of utility levels,
+  an increase in the wealth-consumption ratio lowers utility when $\theta
+  \geq 0$. As shown in \cite{Pohl2019}, the existence problem shows up at the
+  lower end in this case.} Hence, adding preference shocks make the existence
+condition more stringent. Furthermore, the more volatile and the larger the
+persistence of the preference shock, the larger becomes $\sS$. We analyze the
+quantitative impact of preference shocks on existence in Section \ref{s:app}.
+
+Proposition \ref{p:ss} has valuable practical implications. For example, in
+long-run risk models, standard parameterizations imply that $\theta<0$. Hence
+$\sS_\lambda \leq 0$.  Thus, if a solution for a model without preference
+shocks exists, there also exists a solution for the same model with preference
+shocks. As a result, one can use the results in, say,
+\cite{hansen2012recursive}, \cite{Pohl2019}, \cite{borovicka2020necessary}, or
+\cite{christensen2022existence}, to prove existence for asset pricing models
+without preference shocks. Under a zero mean growth rate specification,
+existence for the same model with preference shocks then follows from
+Proposition~\ref{p:ss}. 
+
+
+
+
+\section{Applications}\label{s:app}
+
+In this section we consider four applications.  All four assume that
+$\{\lambda_t\}$ is independent of consumption and that the growth rate obeys
+the AR1 specification
+%
+\begin{equation}\label{eq:lambda_ar1}
+    \ln \left( \frac{\lambda_{t+1}}{\lambda_t} \right) 
+    = h_{\lambda, t+1} 
+    = \rho_\lambda h_{\lambda, t} + s_\lambda \, \eta_{\lambda, t+1} 
+    \quad \text{where} \quad
+    \{ \eta_{\lambda, t+1} \} \iidsim N(0,1).
+\end{equation}
+%
+This allows us to derive an analytical expression for $\sS_\lambda$, through
+which we sharpen and clarify the results stated above. 
+
+The first two applications we consider are elementary: the benchmark model
+with {\sc iid} consumption growth in \cite{Albuquerque2016} and the constant
+volatility long-run risk model in \cite{bansal2004risks}.  In these settings,
+we can obtain closed form expressions for $\sS_c$, and hence full analytical
+expressions for $\sS$.  From these representations we can explore the
+intuition behind the main stability condition and illustrate how volatility
+affects stability under different parameterizations.
+
+The second two applications are the model of \cite{schorfheide2018identifying}
+and the model of \cite{GomezYaron2020}.  In these specifications, volatility
+is time varying and an analytical expression for $\sS_c$ no longer exists.
+In response, we explore numerical methods for analyzing stability.
+
+
+\subsection{Purely Transient Consumption Growth}
+
+We begin our analysis with the benchmark model of \cite{Albuquerque2016}.
+In this application, log consumption growth is given by
+%
+\begin{equation}\label{eq:alcg}
+	g_{c, t+1} 
+	= \ln \left( \frac{C_{t+1}}{C_t} \right)    
+	= \mu_c + \sigma_{c} \, \xi_{c, t+1},
+\end{equation}
+%
+where $\{\xi_{c, t}\}$  is  {\sc iid} and standard normal.  The preference shock
+process follows \eqref{eq:lambda_ar1}.  
+
+\begin{proposition}\label{p:ar1}
+	%
+    Under the dynamics in \eqref{eq:lambda_ar1}--\eqref{eq:alcg}, we have
+	%
+	\begin{equation}\label{eq:ml_ar1}
+        \sS_\lambda 
+            =  \theta \, \frac{s_\lambda^2}{2(1-\rho_\lambda)^2}
+            \quad \text{and} \quad
+		\sS_c 
+            = \mu_c + \frac{1}{2}(1-\gamma) \sigma_c^2,
+	\end{equation}
+	%
+    so that
+    %
+    \begin{equation}\label{eq:iiss}
+    \sS = \ln \beta 
+            + \theta \, \frac{s_\lambda^2}{2(1-\rho_\lambda)^2}
+            + \left(1-\frac{1}{\psi}\right) 
+            \left[
+                \mu_c + \frac{1}{2}(1-\gamma) \sigma_c^2
+            \right].
+    \end{equation}
+    %
+\end{proposition}
+
+
+Notice how the expression for $\sS_\lambda$ in Proposition~\ref{p:ar1}
+strengthens Proposition~\ref{p:ss} under the AR1 specification
+\eqref{eq:lambda_ar1}.  We now have the strict inequality implication
+$\sS_\lambda <0$ whenever $\theta<0$, as well as a direct connection between
+$\sS_\lambda$ and the parameters in \eqref{eq:lambda_ar1}.  Increases in volatility $s_\lambda$
+and persistence $\rho_\lambda$ of the preference shocks both lower the mean
+wealth-consumption ratio and decrease $\sS_\lambda$, which makes the existence
+of a solution more likely. 
+
+When elasticity of intertemporal substitution is greater than one, the sign of
+$\theta$ depends on risk aversion.  If the agent prefers early resolution of
+risk (i.e., $\gamma > 1$), as is the case in most asset pricing applications,
+then volatility in the preference shock suppresses the wealth-consumption ratio.  This
+mitigates the possibility of divergence and hence promotes existence.
+If the agent prefers late resolution of
+risk, then the sign of $\theta$ is reversed and the opposite logic is true.
+
+The closed-form expression for $\sS_\lambda$ can directly be related to the
+singularity issues pointed out by \cite{deGroot2018}. Assuming $\gamma > 1$
+as in standard parameterizations, it follows that $\sS_\lambda \to -\infty$
+as $\psi \downarrow 1$ and $\sS_\lambda \to \infty$ as $\psi \uparrow 1$. In
+both cases, preference shocks have a large impact on the wealth-consumption
+ratio as well as utility. This is consistent with the strong effects of
+preference shocks on equilibrium outcomes for IES close to one in
+\cite{deGroot2018}. As a further illustration, we plot $\sS_\lambda$ as a
+function of $\psi$ in the neighborhood of unity in Figure
+\ref{f:singularity_albu}. Note that as $\psi \to 1$, $|\sS_\lambda|$
+increases significantly, which resembles the asymptote in the responses to
+preference shocks documented in \cite{deGroot2018}.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.6\textwidth]{figs/singularity_albu.pdf}
+    \caption{The figure plots $\sS_\lambda$ as a function of $\psi$ in the
+    neighborhood of unity for the benchmark model of \cite{Albuquerque2016}.}\label{f:singularity_albu}
+\end{figure}
+
+
+The analytic solution for $\sS_c$ in \eqref{eq:ml_ar1} is derived in
+\cite{borovicka2020necessary}.  Note that for $\psi>1$  the substitution
+effect dominates the wealth effect so the investor lowers her consumption
+relative to wealth in response to improved investment opportunities. So for a
+given $\mu_c > 0$, either $\beta$ must be sufficiently small, $\sigma_{c}$
+must be sufficiently large or $h_{\lambda, t+1}$ must be sufficiently
+persistent and volatile to guarantee existence.  \cite{Albuquerque2016} use
+$\beta = 0.99795$, $\gamma = 1.516$, $\psi =
+1.4567$, $\mu_c = 0.0015644$, $\sigma_c = 0.0069004$, $\rho_\lambda = 0.99132$
+  and $s_\lambda = 0.00058631$, which implies
+%
+\begin{equation*}
+	\ln \beta  = -0.00205,
+    \quad
+	\sS_\lambda  =  -0.00375,
+    \quad \text{and} \quad
+	\left(1-\frac{1}{\psi}\right) \sS_c = 0.00049.
+\end{equation*}
+%
+Hence $\sS = -0.0053$.  From Theorem~\ref{t:bk} it follows that the model has a unique stationary
+Markov solution in $\cC$.  Furthermore, the effect of the preference shock on
+$\sS$ is sufficiently large such that for any  $\beta< 1$ it holds that $\sS
+< 0$.  Figure \ref{f:stab_coeff_lambda_albu_2} plots  $\sS_\lambda$  as a
+function of $\rho_\lambda $ and $s_\lambda$. The more persistent and the more
+volatile the growth rate of the preference shock, the smaller  $\sS_\lambda$.
+The magnitudes of $\sS_\lambda$ are large compared to
+$\left(1-1/\psi\right) \sS_c$, so adding a preference shock to the
+model makes existence of a solution significantly more likely. 
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.7\textwidth]{figs/stab_coeff_lambda_albu2.pdf}
+    \caption{The figure plots $\sS_\lambda$ as a function of $\rho_\lambda $
+    and $s_\lambda$ for the benchmark model of
+    \cite{Albuquerque2016}.}\label{f:stab_coeff_lambda_albu_2}
+\end{figure}
+
+The size of this effect is demonstrated in Figure
+\ref{f:stab_coeff_comparison_3d_albu}. It plots the stability coefficient
+$\sS$ as a function of $\psi $ and $\gamma$ with (the darker surface)
+and without (the lighter surface) preference shocks. We observe that $\sS$ is
+significantly lower in the benchmark model and increasing $\gamma$ or
+decreasing $\psi$ has a large impact on $\sS$ when preference shocks are
+present, while the impact is significantly smaller in the model without
+preference shocks.
+
+\begin{figure}
+    \centering
+	\includegraphics[width=0.65\textwidth, trim=0 18mm 0 20mm, clip]{figs/stab_coeff_comparison_3d_albu}
+	\caption{\label{f:stab_coeff_comparison_3d_albu} The figure plots $\sS$
+      as a function of $\gamma$ and $\psi$ for the model of
+      \cite{Albuquerque2016}. The darker surface on the bottom and
+      the lighter surface above show the results with and without preference
+      shocks, respectively.}
+\end{figure}
+
+\subsection{Constant Volatility Consumption Growth}
+
+Following Section~I.A of \cite{bansal2004risks}, 
+suppose that consumption grows according to
+%
+\begin{align*}
+    g_{c, t+1} 
+    & = \mu_c + z_t + \sigma_c \, \xi_{t+1}
+        \\
+    z_{t+1}
+    & = \rho z_t + \sigma \, \eta _{t+1}.
+\end{align*}
+%
+The specification for preference shocks remains as in \eqref{eq:lambda_ar1}.
+In this case, analysis similar to that for Proposition~\ref{p:ar1} yields
+%
+\begin{equation}\label{eq:sscv}
+    \sS 
+    = \ln \beta
+    + \theta \, \frac{s_\lambda^2}{2(1-\rho_\lambda)^2}
+    +
+    \left(1-\frac{1}{\psi}\right)\left[\mu_c + \frac{1}{2}(1-\gamma)
+    \left( \sigma_c^2 + \frac{\sigma^2}{(1-\rho)^2} \right)\right].
+\end{equation}
+%
+Compared to $\sS$ in \eqref{eq:iiss}, the only difference is in the final term
+$\sigma^2 / (1-\rho)^2$.  This term arises from the persistent, constant
+volatility, long-run growth component $\{z_t\}$.
+
+We see that, in the risk-averse, high elasticity of intertemporal substitution
+setting, where $\gamma > 1$ and $\psi > 1$, the existence condition tightens
+when the mean growth rate for consumption is high and the persistence and volatility of
+consumption is low.  Conversely, for this risk-averse agent, high volatility and high persistence in
+consumption growth relaxes the existence condition by reducing lifetime
+utility.
+
+
+
+\subsection{The Long-Run Risk Model of \cite{schorfheide2018identifying}}
+
+In this section we investigate the stability properties of the long-run risk
+model of \cite{schorfheide2018identifying}. In the model, consumption growth obeys
+%
+\begin{equation}\label{eq:ssycg}
+    g_{c, t+1} 
+    = \ln \left( \frac{C_{t+1}}{C_t} \right)    
+       = \mu_c + z_t + \sigma_{c, t} \, \xi_{c, t+1},
+\end{equation}
+%
+where
+%
+\begin{equation*}
+    z_{t+1} 
+        = \rho \, z_t + \sqrt{1 - \rho^2} \, 
+                \sigma_{z, t} \, \eta_{t+1}
+\end{equation*}
+%
+and
+%
+\begin{equation*}
+    \sigma_{i,t} 
+        = \phi_i \, \bar{\sigma} \, \exp(h_{i, t})
+        \quad \text{where} \quad
+    h_{i, t+1}
+        = \rho_i \, h_{i,t} + s_i \, \eta_{i, t+1}
+        \quad \text{for } i \in \{z, c\}.
+\end{equation*}
+%
+The process $\{\lambda_t\}$ is unchanged from \eqref{eq:lambda_ar1}. All
+innovations $(\xi_{c, t}, \eta_t,  \eta_{z, t}, \eta_{c, t}, \eta_{\lambda,
+t})$ are {\sc iid} and standard normal.  The state vector $x$ contains four
+states and is given by
+%
+\begin{equation}\label{eq:state}
+    x = (z, h_z, h_c, h_\lambda) \in \XX := \RR^4.
+\end{equation}
+
+In this setting, the operator $\KK$ takes the form
+%
+\begin{equation*}
+    (\KK g)(x)
+    = \EE_x
+        \, g(X_{t+1}) 
+        \exp \left\{
+            \theta h_{\lambda, t+1}
+            + (1-\gamma)(\mu_c + z + \sigma_{c, t} \xi_{c, t+1})
+        \right\}.
+\end{equation*}
+%
+We can reduce dimensionality in the conditional expectation by integrating out
+the independent innovation $\xi_{c, t+1}$, which leads to 
+%
+\begin{align*}
+    (\KK g)(x)
+    & = \EE_x \, g(X_{t+1}) 
+        \exp \left\{
+            \theta h_{\lambda, t+1}
+            + (1-\gamma)(\mu_c + z)
+            + \frac{1}{2} (1-\gamma)^2 \sigma_{c, t}^2 
+        \right\}
+        \\
+    & = \exp \left\{
+            (1-\gamma)(\mu_c + z)
+            + \frac{1}{2} (1-\gamma)^2 \sigma_{c, t}^2 
+        \right\}
+        \EE_x \, g(X_{t+1}) 
+        \exp \left\{
+            \theta h_{\lambda, t+1}
+        \right\},
+\end{align*}
+%
+where the conditioning is on $X_t = x$ as given in \eqref{eq:state}. The
+consumption dynamics \eqref{eq:ssycg} do not permit an analytic solution for
+$\sS_c$. Hence, we compute the stability coefficient using numerical methods.
+As proposed by \cite{borovicka2020necessary}, we compute $\sS_c$ using Monte
+Carlo simulations (see Appendix~\ref{ss:N_T} for details on the computations).  \cite{schorfheide2018identifying} use $\beta = 0.999$, $\gamma = 8.89$, $\psi
+=
+1.97$, $\mu_c = 0.0016$, $\bar{\sigma} = 0.0035$, $\phi_z = 0.215 \sqrt{1 -
+\rho^2}$, $\phi_c = 1$, $\rho = 0.987$, $\rho_\lambda = 0.959$, $\rho_z =
+0.992$, $\rho_c = 0.991$, $s_\lambda = 0.0004$, $s_z^2 = 0.0039$ and $s_c^2 =
+0.0096$, which implies
+%
+\begin{equation*}
+    \ln \beta = -0.001,\; \sS_\lambda = -0.00076, \text{ and }
+    \left(1-\frac{1}{\psi}\right) \sS_c = 0.00061.
+\end{equation*}
+%
+Hence, $\sS = -0.00115$. From Theorem~\ref{t:bk} it follows that the model has
+a unique stationary Markov solution in $\cC$. Again, we find that the effect
+of the preference shock on $\sS$ is sufficiently large such that for any
+$\beta < 1$ it holds that $\sS < 0$.  
+
+
+%\begin{figure}
+%    \centering
+%    \scalebox{0.6}{\includegraphics{figs/stab_coeff_lambda_ssy_1.pdf}}
+%    \caption{\label{f:stab_coeff_lambda_ssy_1} $\sS_\lambda$ as a function of $\psi, \gamma$ (SSY model)}
+%\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.7\textwidth]{figs/stab_coeff_lambda_ssy_2.pdf}
+	\caption{\label{f:stab_coeff_lambda_ssy_2} The figure plots $\sS_\lambda$ as a function of $\rho_\lambda $
+		and $s_\lambda$ for the model of \cite{schorfheide2018identifying}.}
+\end{figure}
+
+Figure~\ref{f:stab_coeff_lambda_ssy_2}
+plots $s_\lambda$ as a function of $\rho_\lambda$ and $s_\lambda$.
+It shows that even small changes in $\rho_\lambda$ and $s_\lambda$ have large
+effects on existence. While highly persistent and volatile preference shocks
+guarantee existence even if $\left(1-\frac{1}{\psi}\right) \sS_c$ is large,
+slightly lower values for $\rho_\lambda$ and $s_\lambda$ compared to the
+calibration of  \cite{schorfheide2018identifying} imply a negligible effect of
+the preference shocks on existence. For example, assuming  $\rho_\lambda =
+0.94$ and $s_\lambda = 0.0036$ instead of  $\rho_\lambda = 0.959$ and
+$s_\lambda = 0.0004$ implies $s_\lambda = -0.00028$: the effect of
+preference shocks on existence is almost reduced by a factor of 3. 
+
+Figure \ref{f:stab_coeff_comparison_3d_ssy} plots $\sS$ as a function of
+$\gamma$ and $\psi$. For the model with preference shocks (the darker
+surface), we find that increasing risk aversion and decreasing the IES towards
+unity significantly lowers $\sS$ so it makes the existence condition less
+tight. In contrast, in the absence of preference shocks (the lighter
+surface), the effect of risk aversion and the IES on existence is much
+smaller. Furthermore, adding preference shocks to the model significantly
+relaxes the existence condition, which can be observed by the large absolute
+difference between the two surfaces. The dashed line shows the difference in
+$\sS$ between the model with and without preference shocks.
+
+ \begin{figure}
+	\centering
+	\includegraphics[width=0.6\textwidth, trim=0 18mm 0 20mm, clip]{figs/stab_coeff_comparison_3d_ssy}
+	\caption{\label{f:stab_coeff_comparison_3d_ssy}The figure plots $\sS$ as
+      a function of $\gamma$ and $\psi$ for the model of
+      \cite{schorfheide2018identifying}. The darker surface on the bottom and
+      the lighter surface above show the results with and without preference
+      shocks, respectively.}
+\end{figure}
+
+%\begin{figure}
+%	\centering
+%	\includegraphics[width=\textwidth]{figs/stab_coeff_ssy_2}
+%	\caption{\label{f:stab_coeff_ssy_2} The figure plots $\sS$ as a function of $\rho_\lambda $
+%		and $s_\lambda$ for the model of \cite{schorfheide2018identifying}.}
+%\end{figure}
+%\begin{figure}
+%    \centering
+%    \scalebox{0.6}{\includegraphics{figs/singularity.pdf}}
+%    \caption{\label{f:singularity} $\sS_\lambda$ as a function of $\psi$ in the neighborhood of unity}
+%\end{figure}
+%\begin{figure}
+%	\centering
+%	\begin{subfigure}{.5\textwidth}
+%		\caption{Stability coefficient $\sS$}
+%		\includegraphics[width=\textwidth]{figs/stab_coeff_ssy_1}
+%	\end{subfigure}%
+%	\begin{subfigure}{.5\textwidth}
+%		\caption{Stability coefficient $\sS$ with $\sS_\lambda = 0$}
+%		\includegraphics[width=\textwidth]{figs/stab_coeff_nolambda_ssy.pdf}
+%	\end{subfigure}
+%    \caption{The figure plots $\sS$ as a function of $\psi $ and $\gamma$ for
+%      the benchmark model of \cite{schorfheide2018identifying}. Panel (A)
+%      shows results for the model with a preference shock, panel (B) shows
+%      the results without a preference shock so that $\sS_\lambda = 0$.}
+%\end{figure}
+% \begin{figure}
+% 	\centering
+% 	\scalebox{0.7}{\includegraphics[trim=20mm 20mm 1mm 20mm, clip]{figs/ssy_wcr_zhz.pdf}}  % left bottom right top
+% 	\caption{\label{f:ssy_wcr_zhz} The wealth-consumption ratio given $z$ and $h_z$ (SSY model)}
+% \end{figure}
+
+
+\subsection{The Long-Run Risk Model of \cite{GomezYaron2020}}
+
+
+In this section, we analyze the stability properties of the model of \cite{GomezYaron2020}. The authors add inflation dynamics to a long-run risk model similar to the one of 
+\cite{schorfheide2018identifying}. In particular, they assume that the expected inflation rate $z_{\pi,t}$ affects the mean growth rate of consumption:
+%
+\begin{equation}\label{eq:gcycg}
+	g_{c, t+1} 
+	= \ln \left( \frac{C_{t+1}}{C_t} \right)    
+	= \mu_c + z_t + \sigma_{c, t} \, \xi_{c, t+1},
+\end{equation}
+%
+where
+%
+\begin{align*}
+	z_{t+1} 
+	&= \rho \, z_t + \rho_{\pi} \, z_{\pi,t}+ 
+	\sigma_{z, t} \, \eta_{t+1}\\
+	z_{\pi,t+1} 
+	&= \rho_{\pi \pi} \, z_{\pi,t} + \sigma_{z \pi, t} \, \eta_{\pi,t+1}
+\end{align*}
+%
+and
+%
+\begin{equation*}
+	\sigma_{i,t} 
+	= \phi_i \, \bar{\sigma} \, \exp(h_{i, t})
+	\quad \text{where} \quad
+	h_{i, t+1}
+	= \rho_i \, h_{i,t} + s_i \, \eta_{i, t+1}
+	\quad \text{for } i \in \{z, c, z\pi \}.
+\end{equation*}
+%
+Note that also the expected inflation rate $z_{\pi,t}$ has stochastic volatility $\sigma_{z\pi,t}$. As in the model of \cite{schorfheide2018identifying}, the process $\{\lambda_t\}$ follows
+\eqref{eq:lambda_ar1} and all shocks are \textsc{iid} and standard normal. Hence, the state vector $x$ contains 6 states and is given by
+%
+\begin{equation*}
+    x = (z, z_\pi, h_z, h_c, h_{z\pi}, h_\lambda) \in \XX := \RR^6. 
+\end{equation*}
+%
+We can apply the same conditioning as in the model of
+\cite{schorfheide2018identifying} and we need to compute $\sS_c$ numerically
+again. \cite{GomezYaron2020} use $\beta = 0.9987$, $\gamma = 13.01$, $\psi =
+1.5$, $\mu_c = 0.0016$, $\bar{\sigma} = 0.0015$, $\phi_z = 0.13$, $\phi_c =
+1$, $\phi_{z\pi} = 0.08$, $\rho = 0.983$, $\rho_{\pi} = -0.0075$,
+$\rho_{\pi\pi} = 0.985$, $\rho_\lambda = 0.981$, $\rho_z = 0.980$, $\rho_c =
+0.992$, $\rho_{z\pi} = 0.970$, $s_\lambda = 0.00018$, $s_z = 0.09$, $s_c =
+0.104$ and $s_{z\pi} = 0.271$, which implies
+%
+\begin{equation*}
+\ln \beta = -0.0013,\; \sS_\lambda = -0.0016, \text{ and }
+\left(1-\frac{1}{\psi}\right) \sS_c = 0.0004.
+\end{equation*}
+%
+Hence, $\sS = -0.0025$. From Theorem~\ref{t:bk} it follows that the model has a unique stationary
+Markov solution in $\cC$. As in the other models considered in this section, the effect of the preference shock on $\sS$ is sufficiently large such that for any $\beta < 1$ it holds that $\sS < 0$. Also, as Figure~\ref{f:stab_coeff_lambda_gcy_2} shows, even small changes in the persistence and volatility of the preference shock have large effects on existence. So slightly increasing $\rho_\lambda $ and $s_\lambda$ will ensure existence even in a rapidly growing economy.
+
+Figure~\ref{f:stab_coeff_comparison_3d_gcy} plots $\sS$ as a function of
+$\gamma$ and $\psi$ for the model with and without preference shocks. As in
+the model of \cite{schorfheide2018identifying}, $\sS$ is significantly lower
+in the model with preference shocks (the darker surface) compared to the same
+model without preference shocks (the lighter surface) and the difference
+increases rapidly with increasing risk aversion and decreasing IES towards
+unity. Hence, in the three quantitative applications we consider, preference
+shocks are the dominant driver for the existence of a solution. The shocks
+ensure existence for any discount factor $\beta < 1$ and solutions exists
+even if the mean growth rate is high.
+\begin{figure}
+	\centering
+	\includegraphics[width=0.7\textwidth]{figs/stab_coeff_lambda_gcy_2.pdf}
+	\caption{\label{f:stab_coeff_lambda_gcy_2} The figure plots $\sS_\lambda$ as a function of $\rho_\lambda $
+		and $s_\lambda$ for the model of \cite{GomezYaron2020}.}
+\end{figure}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.6\textwidth, trim=0 18mm 0 20mm, clip]{figs/stab_coeff_comparison_3d_gcy}
+	\caption{\label{f:stab_coeff_comparison_3d_gcy}The figure plot $\sS$ as a
+      function of $\gamma$ and $\psi$ for the model of \cite{GomezYaron2020}.
+      The darker surface on the bottom and the lighter surface above show the
+      results with and without preference shocks, respectively.}
+\end{figure}
+
+
+%\begin{figure}
+%    \centering
+%    \includegraphics[width=0.7\textwidth]{figs/stab_coeff_gcy_2}
+%    \caption{\label{f:stab_coeff_gcy_2} $\sS$ as a function of $\rho_\lambda$
+%      and $s_\lambda$ (GCY model)}
+%\end{figure}
+
+%\begin{figure}
+%	\centering
+%	\begin{subfigure}{.5\textwidth}
+%		\caption{Stability coefficient $\sS$}
+%		\includegraphics[width=\textwidth]{figs/stab_coeff_gcy_1}
+%	\end{subfigure}%
+%	\begin{subfigure}{.5\textwidth}
+%		\caption{Stability coefficient $\sS$ with $\sS_\lambda = 0$}
+%		\includegraphics[width=\textwidth]{figs/stab_coeff_nolambda_gcy.pdf}
+%	\end{subfigure}
+%    \caption{The figure plots $\sS$ as a function of $\psi $ and
+%    $\gamma$ for the benchmark model of \cite{GomezYaron2020}. Panel (A)
+%    shows results for the model with a preference shock, panel (B) shows the
+%    results without a preference shock so that  $\sS_\lambda = 0$.}
+%\end{figure}
+
+
+
+\section{An Alternative Specification}\label{s:alt_spec}
+
+To remove the asymptote in the responses to preference shocks,
+\cite{deGroot2018} propose the following alternative specification for
+recursive preferences
+%
+\begin{equation}
+    \label{eq:agg_alt}
+    V_t = \left[
+            (1 -  a_t\beta) C_t^{1-1/\psi}
+            + a_t\beta \left\{ \rR_{t, 1-\gamma} \left(V_{t+1}
+            \right) \right\}^{1-1/\psi}
+          \right]^{1/(1-1/\psi)},
+\end{equation}
+%
+which \cite{degroot2021valuation} then use in an asset pricing context.
+
+Dividing both sides of \eqref{eq:agg_alt} by $C_t$ and raising to the power
+of $1 - \gamma$ yields an equivalent recursion
+%
+\begin{equation}
+    \label{eq:agg2_alt}
+    \tilde G_t = \left\{
+        (1 - a_t\beta) + a_t\beta
+        \left[
+            \EE_t \tilde G_{t+1} \left(\frac{C_{t+1}}{C_t}\right)^{1-\gamma}
+        \right]^{1/\theta}
+        \right\}^\theta,
+\end{equation}
+%
+where
+%
+\begin{equation*}
+    % \label{eq:defg_alt}
+    \tilde G_t := \left( \frac{V_t}{C_t} \right)^{1-\gamma}.
+\end{equation*}
+%
+Similar to Section~\ref{s:results}, we seek a stationary Markov solution to
+\eqref{eq:agg2_alt} in the form of $\{\tilde G_t\} := \{\tilde g(X_t)\}$. Let
+operator $\tilde \KK$ be defined by
+%
+\begin{equation*}
+    % \label{eq:defk_alt}
+    (\tilde \KK g)(x) = \EE_x g(X_{t+1})
+    \exp\left\{(1-\gamma) g_c(X_t, X_{t+1}, \xi_{t+1}) \right\}
+\end{equation*}
+%
+and assume that $a_t = h(X_t) \in (0, 1/\beta)$. Let $\tilde F: \RR_+ \times
+\XX \to \RR$ be given by
+%
+\begin{equation*}
+    \tilde F(t, x) = \left(1 - h(x)\beta + h(x)\beta t^{1/\theta} \right)^\theta.
+\end{equation*}
+%
+Then, the solution $\tilde g$ satisfies
+%
+\begin{equation}
+    \label{eq:deft_alt}
+    \tilde g(x)
+    = (\tilde \TT \tilde g) (x)
+    := \tilde F \left( (\tilde \KK \tilde g)(x), x \right).
+\end{equation}
+%
+We have the following proposition that parallels Theorem~\ref{t:bk}.
+
+\begin{proposition}
+    \label{p:drt}
+    Suppose $h \in \cC$ and $\sup_{x \in \XX} h(x) = \bar a < 1/\beta$. If
+    Assumption~\ref{a:q} holds and
+    %
+    \begin{equation}
+        \label{eq:sS_alt}
+        \tilde \sS := \ln \beta + \ln \bar a + \frac{\ln r(\tilde \KK)}{\theta}
+        < 0,
+    \end{equation}
+    %
+    then the recursion \eqref{eq:agg2_alt} has a unique stationary Markov
+    solution $\tilde g^*$ in $\cC$. In addition, for all $g \in \cC$, there
+    exists an $a < 1$ and $N < \infty$ such that
+    %
+    \begin{equation*}
+        \sup_{x \in \XX} | (\tilde \TT^n g)(x) - \tilde g^*(x) |
+        \leq a^n N
+        \;
+        \text{ for all } n \in \NN.
+    \end{equation*}
+    %
+\end{proposition}
+
+The main difference between condition \eqref{eq:sS_alt} and $\sS < 0$ in
+Theorem~\ref{p:drt} is that $\tilde \sS$ does not contain the growth rate of
+preference shocks. Instead, only the maximum level of the preference shock
+process affects existence. In this case, no matter whether $\psi$ approaches 1 from
+above or below, $\lim_{\psi \to 1}\tilde \sS = \ln \beta + \ln \bar a$. This
+confirms the lack of asymptote reported in \cite{deGroot2018} and \cite{degroot2021valuation}.
+
+\section{Conclusion}\label{s:conclusion}
+
+%\textcolor{red}{I think we might want to talk about the big picture, the
+  %bigger theme, in the first few sentences here. That is, we contribute to
+  %the understanding of preference shocks in asset pricing models and that's
+  %important. (I don't think we can claim to have resolved the debates on
+  %preference shocks. Those papers in Econometrica were debating whether we
+  %need certain kind of preference shocks to generate large responses, but we
+  %don't answer this question in this paper.) And in the end, we could discuss
+  %directions for future research, for example, how to connect our results to
+  %the economy's response to shocks.}
+
+The results presented in this paper substantially enhance our understanding of
+lifetime utility and the wealth-consumption ratio in modern asset pricing
+models with preference shocks.  The core results in our paper are built around
+a stability coefficient that depends on preference parameters, preference
+shock dynamics, and the dynamics of consumption paths.
+To isolate the effect of preference shocks on existence, we use a weak
+independence assumption to show that the stability coefficient can be
+decomposed into three terms: the first term only depends on the subjective
+discount factor and the second and third terms are driven by preference shocks
+and consumption risks respectively. This decomposition allows us to quantify
+the impact of preference shocks on existence. 
+
+We show that, for risk averse agent with an IES greater than one---as is
+commonly assumed in asset pricing models---preference shocks always relax the
+existence condition and, moreover, that their impact on existence is large under
+standard calibrations.  More precisely, preference
+shocks dominate the effect of consumption risks on existence, so that, even for
+quickly growing economies, there exists a solution for any subjective discount
+factor smaller than one.  Moreover, if the IES approaches one, the stability
+coefficient diverges such that for an IES sufficiently close but larger
+(smaller) than one, a solution always (never) exists. In sum, this paper
+provides a general and easily applicable approach that can be used to settle
+the questions of existence and uniqueness for a wide range of asset pricing
+models with preference shocks.
+
+As our approach does not require strong assumptions on the underlying
+consumption process, it can be extended to cases in which preference shocks
+are added to models that rely on other risk factors such as models with
+consumption disasters as in \cite{Barro2009} and \cite{Wachter2013}, models
+with volatility of volatility as in \cite{Bollerslev2009} and
+\cite{Bollerslevetal2015} and models with jumps in volatility and growth rates
+as in \cite{DrechslerYaron11}.  The details of these extensions and the impact
+of other risk factors on the stability coefficient are left for future
+research.
+
+
+
+
+
+\section{Appendix}
+
+In this section we detail computations and collect remaining proofs.
+We also provide a variation on a fixed point theorem of \cite{du1990fixed} that has
+independent interest.
+
+\subsection{Preliminaries}
+
+
+Let $\eE := (\eE, \| \cdot \|, \leq)$ be a Banach lattice (see, e.g,
+\cite{meyer2012banach}).  A self-map $S$ from a convex subset $E$ of $\eE$
+into itself is called convex on $E$ if 
+%
+\begin{equation*}
+    S (\lambda f + (1-\lambda) g) \leq \lambda S + (1-\lambda) S g
+    \text{ for all }
+    f,g \in E
+    \text{ and all }
+    \lambda \in [0,1].   
+\end{equation*}
+%
+It is called concave if the reverse inequality holds. It is called order
+preserving if $f \leq g$ implies $Sf \leq Sg$.
+
+For a linear operator $A$ mapping $\eE$ to itself, the operator
+norm and spectral radius of $A$  are defined, as usual, by $\|A\| := \sup
+\setntn{\|Ag\|}{g \in \eE ,\; \| g \| \leq 1}$ and $r(A) := \lim_{n \to
+\infty} \| A^n \|^{1/n}$ respectively.   The operator $A$ is called
+positive if $Ag \geq 0$ whenever $g \geq 0$.  It is called
+bounded if $\| A \|$ is finite and compact if the image of the
+unit ball in $\eE$ under $A$ has compact closure.
+
+For a self-map $S$ from $E \subset \eE$ to itself, we will say that $S$ is
+geometrically stable on $E$ if $S$ has a unique fixed point $u^*$ in $E$ and,
+moreover, for all $u \in E$, there exists an $a < 1$ and $N < \infty$ such
+that $\| S^n u - u^* \| \leq a^n N$ for all $n \in \NN$.  Let $\pP$ be the
+(nonempty) interior of the positive cone of $\eE$. For $u, v \in \eE$, we
+write $u \ll v$ if $v - u \in \pP$. The following fixed point result, which
+extends a deeper result due to \cite{du1990fixed}, is the key to our main
+theorem. 
+
+\begin{theorem}\label{t:du}
+    Let $S$ be a self-map on $\pP$ such that the following two conditions hold.
+    %
+    \begin{enumerate}
+        \item For any $g \in \pP$, there exists an $f \in \pP$ such that $f \leq g$ and $f \ll Sf$.
+        \item For any $g \in \pP$, there exists an $f \in \pP$ such that $g \leq f$ and $Sf \ll f$.
+    \end{enumerate}
+    %
+    If, in addition, $S$ is order preserving and either convex or concave on
+    $\pP$, then $S$ is geometrically stable on $\pP$.
+\end{theorem}
+
+\begin{proof}
+    Fix $g_1 \in \pP$ and use (a) to take $f_1$ such that $f_1 \leq g_1$ and
+    $f_1 \ll Sf_1$.  In addition, fix $g_2 \in
+    \pP$ and use (b) to take $f_2$ such that $g_2 \leq f_2$ and $Sf_2 \ll f_2$. Since $S$ is order preserving, $S$ is a self-map on $[f_1,
+    f_2]$.  Since $S$ is either convex or concave and the strict orderings
+    $f_1 \ll Sf_1$ and $Sf_2 \ll f_2$ hold, $S$ is geometrically stable on
+    $[f_1, f_2]$ by Theorem~3.1 of \cite{du1990fixed}.  Let $g^*$ be the fixed
+    point.
+
+    Pick any $g \in \pP$.  By the conditions of Theorem \ref{t:du}, we can now take a new
+    pair of functions $h_1, h_2$, this time with $h_1 \leq g, g^* \leq h_2$,
+    such that $Sh_1 \gg h_1$ and $Sh_2 \ll h_2$.  Applying Theorem~3.1
+    from \cite{du1990fixed} once more, $S$ is geometrically stable on $[h_1,
+    h_2]$.  Since $g^*$ is a fixed point of $S$ and $g^* \in [h_1, h_2]$, it
+    must be that $g^*$ is the unique fixed point in $[h_1, h_2]$, and, for
+    some $a <1$ and $N < \infty$, that $\| S^n g - g^*\| \leq a^n N$ for all $n \in \NN$.
+
+    We have now shown that every $g \in \pP$ converges geometrically to the
+    $g^*$, where $g^*$ is a fixed point of $S$.  As a consequence, $g^*$ is the unique fixed point of
+    $S$ in $\pP$, and $S$ is geometrically stable on $\pP$.
+\end{proof}
+
+
+
+
+
+\subsection{Properties of The Discount Operator}
+
+In this section we investigate the properties of $\KK$.  We adopt the setting of
+Section~\ref{s:env} and all assumptions stated there are maintained here,
+including Assumption~\ref{a:q}. 
+
+Let $L_1(\pi)$ be all Borel measurable functions $g \colon \XX \to \RR$ with
+%
+\begin{equation*}
+    \| g \| := \int |g(x)| \pi(\diff x) < \infty.
+\end{equation*}
+%
+For $f, g \in L_1(\pi)$ we write $f \leq g$
+if $f(x) \leq g(x)$ for $\pi$-almost all $x \in \XX$.  We write $f \ll g$ if
+$f(x) < g(x)$ for $\pi$-almost all $x \in \XX$.  We define $\gG$ to be all $f
+\in L_1(\pi)$ such that $f \gg 0$.
+
+The next lemma will be useful.
+
+\begin{lemma}
+    The common marginal density $\pi$ of each $X_t$ is continuous and
+    everywhere positive on $L_1(\pi)$.
+\end{lemma}
+
+\begin{proof}
+    This follows from Assumption~\ref{a:q}.  The proof is identical to that of
+    Lemma~C1 in \cite{borovicka2020necessary}.
+\end{proof}
+
+We will use a kind of local spectral radius theorem.  The version below is
+proved in \cite{borovicka2020necessary}.
+
+\begin{theorem}
+    \label{t:lsr2}
+    Let $A$ be a linear operator on $L_1(\pi)$.  If $A^i$ is compact for some
+    $i \in \NN$ and $A g \in \gG$ whenever $g \in \gG$, then
+    %
+    \begin{equation}
+        \label{eq:lsr2}
+        \lim_{n \to \infty}
+        \left\{ \int A^n h \, \diff \pi \right\}^{1/n} = r(A)
+        \quad \text{for all } h \in \gG.
+    \end{equation}
+    %
+\end{theorem}
+
+Below we use Theorem~\ref{t:lsr2} to generate the alternative representation
+of $\sS$ provided in Proposition~\ref{p:d}.
+
+Throughout this section, we regard $\KK$ from \eqref{eq:defk} as a linear
+operator on $L_1(\pi)$.  The spectral radius $r(\KK)$ of $\KK$ is the
+$L_1(\pi)$ spectral radius.  We find it convenient to express $\KK$ as the
+integral operator
+%
+\begin{equation}\label{eq:defkio}
+    (\KK g)(x) = \int g(y) k(x, y) \diff y 
+\end{equation}
+%
+where the kernel $k$ is given by 
+%
+\begin{equation*}
+    k(x, y) 
+    := \EE_\xi \Gamma(x, y, \xi)
+    q(x, y) 
+    \qquad ((x, y) \in \XX \times \XX)
+\end{equation*}
+%
+with $\Gamma$ defined in \eqref{eq:sdef}.
+Since $\EE_\xi\Gamma$ and $q$ are both continuous and $\XX$ is compact, the function
+$k$ is continuous and bounded on $\XX \times \XX$.
+
+\begin{lemma}
+    \label{l:wpok}
+    Regarding the operator $\KK$, the following statements are true:
+    %
+    \begin{enumerate}
+        \item $\KK$ is a bounded linear operator on $L_1(\pi)$.
+        \item $\KK g$ is continuous at each $g \in \gG$.
+        \item $\KK g \geq 0$ when $g \geq 0$ and $\KK g \in \gG$ whenever $g \in \gG$.
+        \item $\KK$ is irreducible and $\KK^2$ is compact.
+        \item $r(\KK) > 0$ and there exists a continuous function $e \in \gG$
+            satisfying $\KK e = r(\KK) e$.  
+        \item $\KK$ is order preserving on $L_1(\pi)$.
+    \end{enumerate}
+    %
+\end{lemma}
+
+\begin{proof}[Proof of Lemma~\ref{l:wpok}]
+    Proofs for (a)--(b) can be found in the proof of Lemma~C2 of
+    \cite{borovicka2020necessary}.  (While the definition of the kernel $k$
+    for the integral operator $\KK$ is
+    different in \cite{borovicka2020necessary}, its properties are essentially
+    identically.  As a result, no modifications to the proof are necessary.) 
+    For part (c), the first claim is obvious and the second follows from
+    everywhere positivity of $\Gamma$.
+    Part (d) follows from Lemma~C3 of \cite{borovicka2020necessary}.
+
+    Regarding part (e), Theorem~4.1.4 and Lemma~4.2.9 of
+    \cite{meyer2012banach} together with the irreducibility and compactness
+    properties of $\KK$ obtained in part (d) yield positivity of
+    $r(\KK)$ and existence of the positive eigenfunction $e$.
+    Part (b) implies that $e$ is continuous, since $e \in \gG$,
+    $r(\KK)>0$ and $e = (\KK e) / r(\KK)$.
+
+    Regarding part (f), we have already shown that $\KK$ is linear and $\KK f
+    \geq 0$ when $f \geq 0$.  Hence, if $g \leq h$, then $\KK (h - g) \geq 0$
+    and, therefore, $\KK h - \KK g \geq 0$.  
+\end{proof}
+
+In what follows, the function $e$ is called the Perron--Frobenius
+eigenfunction.
+
+
+
+\begin{lemma}\label{l:kn}
+    For all $n \in \NN$, we have
+    %
+    \begin{equation}\label{eq:knar}
+        (\KK^n \1)(x)
+        = \EE_x
+         \left( \frac{\lambda_n}{\lambda_0} \right)^\theta
+         \left( \frac{C_n}{C_0} \right)^{1-\gamma} 
+         \qquad (x \in \XX).
+    \end{equation}
+    %
+\end{lemma}
+
+\begin{proof}
+    Fix $n \in \NN$.  A straightforward inductive argument confirms that
+    %
+    \begin{equation}\label{eq:kir}
+        (\KK^n \1)(x) = \EE_x \prod_{i=1}^n \Gamma(X_{i-1}, X_i, \xi_i)
+    \end{equation}
+    %
+    for all $x \in \XX$, where $\EE_x$ conditions on $X_0 = x$.  Now observe that
+    %
+    \begin{align*}
+        \prod_{i=1}^n \Gamma(X_{i-1}, X_i, \xi_i)
+        & =
+        \prod_{i=1}^n
+        \exp
+        \left\{ 
+            \theta g_\lambda(X_{i-1}, X_i, \xi_i) + (1-\gamma)
+            g_c(X_{i-1}, X_i, \xi_i)
+        \right\}
+        \\
+        & =
+        \prod_{i=1}^n
+        \left( \frac{\lambda_i}{\lambda_{i-1}} \right)^\theta
+        \left( \frac{C_i}{C_{i-1}} \right)^{1-\gamma} .
+    \end{align*}
+    %
+    Cancelling terms and combining with \eqref{eq:kir} gives \eqref{eq:knar}.
+\end{proof}
+
+
+\begin{proof}[Proof of Proposition~\ref{p:d}]
+    From Lemma~\ref{l:kn} and the law of iterated expectations we have
+    %
+    \begin{equation*}
+       \int \KK^n \1 \diff \pi
+        = \EE
+         \left( \frac{\lambda_n}{\lambda_0} \right)^\theta
+         \left( \frac{C_n}{C_0} \right)^{1-\gamma} ,
+    \end{equation*}
+    %
+    where $\EE$ is the unconditional stationary expectation (i.e., with $X_0 \eqdist \pi$).
+    By independence of $\{\lambda_t\}$ and $\{ C_t \}$, we then have
+    %
+    \begin{align*}
+       \left\{
+           \int \KK^n \1 \diff \pi
+       \right\}^{1/n}
+       & =
+        \left\{
+            \EE \left( \frac{\lambda_n}{\lambda_0} \right)^\theta
+        \right\}^{1/n}
+        \left\{
+            \EE \left( \frac{C_n}{C_0} \right)^{1-\gamma} 
+        \right\}^{1/n}
+        \\
+       & =
+        \left\{
+            \rR_\theta \left( \frac{\lambda_n}{\lambda_0} \right)
+        \right\}^{\theta/n}
+        \left\{
+            \rR_{1-\gamma} \left( \frac{C_n}{C_0} \right)
+        \right\}^{(1-\gamma)/n}.
+    \end{align*}
+    %
+    In view of Lemma~\ref{l:wpok}, the operator $\KK$ satisfies all the
+    conditions of the local spectral radius result in Theorem~\ref{t:lsr2}.
+    Hence, taking the limit and raising to the power of $1/\theta$, we have
+    %
+    \begin{equation*}
+        r(\KK)^{1/\theta} = 
+        \lim_{n\to \infty} \left\{
+            \rR_\theta \left( \frac{\lambda_n}{\lambda_0} \right)
+        \right\}^{1/n}
+        \lim_{n\to \infty}
+        \left\{
+            \rR_{1-\gamma} \left( \frac{C_n}{C_0} \right)
+        \right\}^{(1-1/\psi)/n}.
+    \end{equation*}
+    %
+    Multiplying by $\beta$ and taking logs yields
+    %
+    \begin{equation*}
+        \sS := \ln \beta + \frac{\ln r(\KK)}{\theta} 
+        = \ln \beta 
+            + \sS_\lambda 
+            + \left(1-\frac{1}{\psi}\right) \sS_c,
+    \end{equation*}
+    %
+    as was to be shown.
+\end{proof}
+
+
+\begin{proof}[Proof of Proposition~\ref{p:ar1}]
+    In \eqref{eq:ml_ar1}, we prove only the expression for $\sS_\lambda$, 
+    since the derivation of $\sS_c$ is similar (and easier).  
+
+    By \eqref{eq:lambda_ar1} we have $\lambda_n / \lambda_0 =
+    \exp\left(\sum_{t=1}^{n}h_{\lambda, t} \right)$, and hence
+    %
+    \begin{equation*}
+        \sS_\lambda = \lim_{n \to \infty}
+        \frac{1}{n}
+        \ln 
+        \rR_\theta 
+        \left(
+        \exp\left(\sum_{t=1}^{n}h_{\lambda, t} \right)
+        \right).
+    \end{equation*}
+    %
+    Note that
+    %
+    \begin{equation*}
+        \sum_{t=1}^{n} h_{\lambda, t}
+        \sim N(0, v_n)
+        \;\; \text{ with } \;\;
+        v_n := 
+        \frac{s_\lambda^2}{(1-\rho_\lambda)^2}
+        \left(
+        n -
+        \frac{2\rho_\lambda (1-\rho_\lambda^n)}{1-\rho_\lambda}
+        +\frac{\rho_\lambda^2(1-\rho_\lambda^{2n})}{1-\rho_\lambda^2}
+        \right).
+    \end{equation*}
+    %
+    It follows that
+    %
+    \begin{equation*}
+        \ln \rR_\theta 
+        \left(\exp\left(\sum_{t=1}^{n}h_{\lambda, t}\right)\right) 
+        = \frac{\theta v_n}{2}.
+    \end{equation*}
+    %
+    Multiplying by $1/n$ and taking the limit in $n$ gives~\eqref{eq:ml_ar1}. 
+
+    The expression \eqref{eq:iiss} for $\sS$ follows directly from
+    Proposition~\ref{p:d}.
+\end{proof}
+
+
+
+\subsection{Remaining Proofs}
+
+We now complete all remaining proofs.  As before, Assumption~\ref{a:q} is in
+force.  $\cC$ is the set of continuous everywhere positive functions on $\XX$.
+This corresponds to the interior of the positive cone of the Banach lattice $c
+\XX$, endowed with the supremum norm.
+
+
+\begin{lemma}
+    \label{l:Ft}
+    If $\sS < 0$, then 
+    %
+    \begin{equation}\label{eq:cpk}
+        \lim_{t \downarrow 0} \frac{F(t)}{t} \, r(\KK) > 1
+        \quad \text{and} \quad
+        \lim_{t \uparrow \infty} \frac{F(t)}{t} \, r(\KK) < 1,
+    \end{equation}
+    %
+\end{lemma}
+
+\begin{proof}
+    Let $\Lambda := \exp(\sS) = \beta \, r(\KK)^{1/\theta}$.  By hypothesis,
+    $\Lambda < 1$.  Observe that
+    %
+    \begin{equation}
+        \label{eq:rat}
+        \frac{F(t)}{t}
+        = \left\{ \frac{1 - \beta}{t^{1/\theta}} + \beta \right\}^\theta .
+    \end{equation}
+    %
+    If, on one hand, $\theta < 0$, then $\Lambda < 1$ implies $\beta^\theta
+    r(\KK) > 1$ and, in addition, \eqref{eq:rat}
+    increases to $\beta^{\theta}$ as $t \to 0$.  Thus, the first inequality in
+    \eqref{eq:cpk} holds.  The second inequality also holds because $F(t)/t
+    \to 0$ as $t \to \infty$.  If, on the other hand, $\theta > 0$, then
+    $\beta^\theta r(\KK)
+    < 1$ and  \eqref{eq:rat} diverges to $+\infty$ as $t \to 0$, so the first
+    inequality in \eqref{eq:cpk} holds.  The second inequality also holds
+    because $F(t)/t \to \beta^\theta$ as $t \to \infty$.
+\end{proof}
+
+
+\begin{lemma}\label{l:llo}
+    If $\sS < 0$, then $\TT$ is geometrically stable on $\cC$.  
+\end{lemma}
+
+
+\begin{proof}
+    It suffices to show that, when $\sS < 0$, the operator $\TT$ satisfies 
+    the conditions of Theorem~\ref{t:du} on $\cC$.  
+    By (b)--(c) of Lemma~\ref{l:wpok}, $\TT$ is a self-map on $\cC$.
+    In addition,
+    $\TT$ is order preserving on $\cC$ because $\KK$ is order preserving and $F$
+    is increasing, so $f, g \in \cC$ and $f \leq g$ implies $(F \circ \KK) f \leq
+    (F \circ \KK) g$.  In other words, $\TT f \leq \TT g$.  Moreover, $\TT $ is either
+    convex or concave because $\TT  = F \circ \KK$, the operator $\KK$ is linear,
+    and $F$ is increasing and either concave or convex,
+    depending on the value of $\theta$. 
+
+    In the rest of the proof, we let
+    $r := r(\KK)$ and let $e$ be the Perron--Frobenius eigenfunction.
+    By (e) of Lemma~\ref{l:wpok}, $e \in \cC$ and $r > 0$.
+    Since $e \in \cC$, the constants $\underline e := \min_{x
+    \in \XX} e(x)$ and $\bar e := \max_{x \in \XX} e(x)$ are finite and strictly
+    positive.  
+
+    Fix $g_1, g_2$ in $\cC$. Let
+    %
+    \begin{equation*}
+        \underline g := \min_{x \in \XX} \min\{g_1(x), g_2(x)\}
+        \quad \text{and} \quad
+        \bar g := \max_{x \in \XX} \max\{g_1(x), g_2(x)\}.
+    \end{equation*}
+    %
+    Since $g_1, g_2 \in \cC$ and $\XX$ is compact, we have $\underline g > 0$
+    and $\bar g < \infty$.
+
+    To complete the proof, we need to show that
+    (a)--(c) of Theorem~\ref{t:du} hold.  That is, we need to establish existence of
+    $f_1, f_2 \in \cC$ such that 
+    %
+    \begin{equation*}
+        f_1 \leq g_1, g_2 \leq f_2,
+        \quad
+        \TT f_1 \gg f_1
+        \quad \text{and} \quad
+        \TT f_2 \ll f_2.
+    \end{equation*}
+    %
+    First we construct a function $f_1 \in \cC$ such that 
+    $f_1 \leq g_1, g_2$ and  $\TT f_1 \gg f_1$.
+
+    By $\sS < 0$ and Lemma~\ref{l:Ft}, there exists
+    a $\delta_1 > 1$ and an $\epsilon > 0$ such that
+    %
+    \begin{equation}
+        \frac{F(t)}{t} r \geq \delta_1
+        \quad \text{whenever} \quad 0 < t < \epsilon.
+    \end{equation}
+    %
+    Choose $c > 0$ such that $c \bar e \leq \underline g$ and $c r \bar e <
+    \epsilon$.  Since  $c r e(x) < \epsilon$ for all $x \in \XX$, we have
+    %
+    \begin{equation}
+        (\TT  ce)(x)
+        = F(c \KK e (x))
+        = F(c r e (x))
+        = \frac{ F(c r e (x)) }{c r e (x)} c r e (x)
+        \geq \delta_1 c e (x).
+    \end{equation}
+    %
+    Hence, for $f_1 := c e$, we have $f_1 \leq c \bar e \leq \underline g \leq
+    g_1, g_2$ and $\TT  f_1 \gg f_1$.
+
+    It remains to construct a function $f_2 \in \cC$ such that 
+    $g_1, g_2 \leq f_2$ and  $\TT f_2 \ll f_2$.
+
+    Using Lemma~\ref{l:Ft} again, we can choose a $\delta_2 <1$ and
+    finite constant $M$ such that
+    %
+    \begin{equation}
+        \frac{F(t)}{t} r \leq \delta_2
+        \quad \text{whenever} \quad t > M.
+    \end{equation}
+    %
+    Let $a$ be a positive constant such that $a r \underline e > M$ and $a
+    \underline e \geq \bar g$.  By the definition of $\underline e$ we have $a
+    r e(x) > M$ for all $x \in \XX$, so
+    %
+    \begin{equation}
+        (\TT  a e)(x)
+        = F(a \KK e (x))
+        = F(a r e (x))
+        = \frac{ F(a r e (x)) }{a r e (x)} a r e (x)
+        \leq \delta_2 a e (x).
+    \end{equation}
+    %
+    Hence, for $f_2 := a e$, we have $f_2 \geq a \underline e \geq \bar g \geq
+    g_1, g_2$ and $\TT  f_2 \ll f_2$.
+
+    We conclude that $\TT $ satisfies the conditions of Theorem~\ref{t:du} on $\cC$.  
+\end{proof}
+
+
+\begin{lemma}
+    \label{l:bkn}
+    If $\TT $ has a nonnegative, nonzero fixed point in $L_1(\pi)$, then $\sS < 0$.
+\end{lemma}
+
+\begin{proof}
+    This follows from Proposition~C2 from \cite{borovicka2020necessary}, which
+    shows that $\exp(\sS) < 1$ whenever $\TT $ has a nonnegative, nonzero fixed
+    point in $L_1(\pi)$.  (The operator $\TT $ is slightly different, due to
+    absence of the preference shock, but the proof is otherwise identical.)  
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{t:bk}]
+    Before proceeding, we note that the claim in part (b) of the theorem is
+    equivalent to the statement that $\TT $ is geometrically stable on $\cC$.
+
+    If (a) holds, so that that $\Lambda < 1$, then   $\TT $ is geometrically
+    stable on $\cC$ by Lemma~\ref{l:llo}.  Conversely, if (a) fails, then $\TT $
+    has no fixed point in $\cC$, by Lemma~\ref{l:bkn}.  The last claim in
+    Theorem~\ref{t:bk} also follows from Lemma~\ref{l:bkn}.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{p:wcr}]
+    Let $\tau \colon \cC \to \cC$ be defined by $\tau g = (1-\beta)^{-1}
+    g^{1/\theta}$.  Straightforward algebra shows that $\UU = \tau \TT
+    \tau^{-1}$ on $\cC$.  Since $\theta \not= 0$ and $\beta \in (0,1)$,
+    the map $\tau$ and its inverse $\tau^{-1} f = (1-\beta)^\theta f^\theta$
+    are continuous on $\cC$ when $\cC$ is endowed with the supremum norm distance.  As
+    a result, $(\cC, \TT)$ and $(\cC, \TT)$ are topologically conjugate
+    dynamical systems, which
+    in turn implies that $(\cC, \UU)$ is globally stable if and only if $(\cC,
+    \TT)$ is globally stable.  The claim in Proposition~\ref{p:wcr} now
+    follows from Theorem~\ref{t:bk}.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{p:drt}]
+    Similar to the proof of Lemma~\ref{l:llo}, we aim to apply
+    Theorem~\ref{t:du}.
+
+    First note that all statements of Lemma~\ref{l:wpok} also hold for the
+    operator $\tilde \KK$. Therefore, $\tilde \TT $ is a self-map on $\cC$ and is
+    order preserving. Since $t \mapsto \tilde F(t, x)$ is either convex or
+    concave, $\tilde \TT $ is either convex or concave.
+
+    The rest of the proof relies on a similar statement to Lemma~\ref{l:Ft}:
+    if $\tilde \sS < 0$, then
+    %
+    \begin{equation}
+        \label{eq:cpk2}
+        \lim_{t \downarrow 0} \frac{\tilde F(t, x)}{t} \, r(\tilde \KK) > 1
+        \quad \text{and} \quad
+        \lim_{t \uparrow \infty} \frac{\tilde F(t, x)}{t} \, r(\tilde \KK) < 1
+    \end{equation}
+    %
+    for all $x \in \XX$. To check that \eqref{eq:cpk2} holds, observe that
+    %
+    \begin{equation*}
+        \frac{\tilde F(t, x)}{t} = \left\{
+            \frac{1 - h(x)}{t^{1/\theta}} + h(x)\beta
+        \right\}^\theta.
+    \end{equation*}
+    %
+    If $\theta < 0$, $\tilde \sS < 0$ implies that $\bar a^\theta
+    \beta^\theta r(\tilde \KK) > 1$. Then, we have
+    %
+    \begin{equation*}
+        \lim_{t\to 0} \frac{\tilde F(t, x)}{t}r(\tilde \KK)
+        = h(x)^\theta\beta^\theta r(\tilde \KK)
+        \geq \bar a^\theta \beta^\theta r(\tilde \KK) > 1
+    \end{equation*}
+    %
+    and $\lim_{t\to \infty} \tilde F(t, x)r(\tilde \KK)/t = 0 < 1$. On the
+    other hand, if $\theta > 0$, $\tilde \sS < 0$ implies that $\bar a^\theta
+    \beta^\theta r(\tilde \KK) < 1$. Then, we have
+    %
+    \begin{equation*}
+        \lim_{t\to \infty} \frac{\tilde F(t, x)}{t}r(\tilde \KK)
+        = h(x)^\theta\beta^\theta r(\tilde \KK)
+        \leq \bar a^\theta \beta^\theta r(\tilde \KK) < 1
+    \end{equation*}
+    %
+    and $\lim_{t\to 0} \tilde F(t, x)r(\tilde \KK)/t \to \infty > 1$.
+
+    Given \eqref{eq:cpk2}, the conditions of Theorem~\ref{t:du} can be
+    checked as in the proof of Lemma~\ref{l:llo}.
+\end{proof}
+
+
+\subsection{Computing the Stability Coefficient}\label{s:comp_ssy}
+
+
+Regarding calculation of $\sS_c$ in the model of
+\cite{schorfheide2018identifying}, we have
+%
+\begin{equation*}
+    \rR_{1-\gamma} \left( \frac{C_T}{C_0} \right)
+    = \left( 
+            \EE \left( \frac{C_T}{C_0} \right)^{1-\gamma}
+        \right)^{1/(1-\gamma)}
+    = \left( 
+        \EE \exp\left( (1-\gamma) \sum_{t=1}^T g_{c,t} \right)
+        \right)^{1/(1-\gamma)}.
+\end{equation*}
+%
+Using the definition of consumption growth from \eqref{eq:ssycg}, the
+expectation term becomes
+%
+\begin{equation*}
+    \EE 
+    \exp
+    \left( (1-\gamma) T \mu_c
+         + (1-\gamma) \sum_{t=1}^T z_{t-1} 
+         + (1-\gamma) \sum_{t=1}^T \sigma_{c, t-1} \, \xi_{c, t}
+     \right)
+\end{equation*}
+%
+and hence 
+%
+\begin{equation*}
+    \left\{ \rR_{1-\gamma} \left( \frac{C_T}{C_0} \right) \right\}^{1/T}
+    = \exp(\mu_c)
+        \left[
+            \rR_{1-\gamma} \exp \left( \sum_{t=1}^T z_{t-1} \right)
+        \right]^{1/T}
+        \left[
+            \rR_{1-\gamma} \exp \left( \sum_{t=1}^T \sigma_{c, t-1} \, \xi_{c, t} \right)
+        \right]^{1/T}.
+\end{equation*}
+%
+Taking logs yields
+%
+\begin{equation*}
+    \sS_c 
+    = \mu_c + \sS_c^z + \sS_c^\sigma,
+\end{equation*}
+%
+where
+%
+\begin{equation*}
+    \sS_c^z 
+    := \lim_{T \to \infty} \frac{1}{T} \ln 
+        \rR_{1-\gamma} \exp \left( \sum_{t=1}^T z_{t-1} \right)
+        = \lim_{T \to \infty} \frac{1}{T(1-\gamma)} \ln 
+        \EE \exp \left( (1-\gamma) \sum_{t=1}^T z_{t-1} \right)
+\end{equation*}
+%
+and
+%
+\begin{align*}
+    \sS_c^\sigma
+    & := \lim_{T \to \infty} \frac{1}{T} \ln 
+    \rR_{1-\gamma} \exp \left( \sum_{t=1}^T \sigma_{c, t-1} \, \xi_{c, t} \right)
+    \\
+    & = \lim_{T \to \infty} \frac{1}{T(1-\gamma)} \ln 
+    \EE \exp 
+       \left( 
+           \frac{(1-\gamma)^2}{2} \sum_{t=1}^T \sigma_{c, t-1}^2
+       \right),
+\end{align*}
+%
+where, in the second
+equality, we used independence of $\{ \sigma_{c, t} \}$ and $\{
+\xi_{c,t}\}$, as well as $\xi_{c,t} \sim N(0,1)$ for all $t$.
+
+% bibliography
+
+
+\subsection{Numerical Accuracy}
+\label{ss:N_T}
+
+In this section, we compute the stability coefficient $\sS$ using Monte Carlo
+simulations for models that do not have an analytic expression for $\sS_c$.
+Recall that $\sS_c$ is given by
+%
+\begin{equation*}
+    \sS_c
+    = \lim_{T \to \infty}
+    \frac{1}{T} \ln 
+    \rR_{1-\gamma} \left( \frac{C_T}{C_0} \right)
+    = \lim_{T \to \infty} \frac{1}{T} \frac{1}{1-\gamma} \ln
+        \EE \left( \frac{C_T}{C_0} \right)^{1-\gamma}
+\end{equation*}
+%
+by Proposition~\ref{p:d}. To estimate it numerically, we generate $N$
+independent consumption paths of length $T$ and evaluate
+%
+\begin{equation*}
+    \hat{\sS}_c
+    = \frac{1}{T} \frac{1}{1-\gamma} \ln \frac{1}{N}
+    \sum_{n=1}^N \left( \frac{C^{(n)}_T}{C^{(n)}_0} \right)^{1-\gamma},
+\end{equation*}
+%
+where $C_t^{(n)}$ is the $n$th simulation of time $t$ consumption. Here, we
+use the sample average to estimate the expectation in $\sS_c$, the validity
+of which is guaranteed by the Law of Large Numbers.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{figs/stab_coeff_N_T_ssy}
+    \caption{The figure plots $\sS$ for different $N$ and $T$ for the model of \cite{schorfheide2018identifying}.}
+    \label{f:ssy_NT}
+\end{figure}
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{figs/stab_coeff_N_T_gcy}
+    \caption{The figure plots $\sS$ for different $N$ and $T$ for the model of \cite{GomezYaron2020}.}
+    \label{f:gcy_NT}
+\end{figure}
+
+To evaluate how sample size and length affect the accuracy of the estimator
+$\hat \sS_c$, we plot the estimated stability coefficient for different $N$
+and $T$ for the model of \cite{schorfheide2018identifying} in
+Figure~\ref{f:ssy_NT} and for the model of \cite{GomezYaron2020} in
+Figure~\ref{f:gcy_NT}. The graphs show that for large $N$ and $T$, increasing
+them further only has a marginal effect on the estimates. For the results
+reported in the main text, we use $T = 100,000$ and $N =
+10,000$.\footnote{\cite{borovicka2020necessary} use $T, N \leq 5,000$ in
+  their applications, but we need much longer sample paths to accurately
+  compute $\sS_c$ in the presence of preference shocks.}
+
+\bibliographystyle{ecta}
+\bibliography{localbib}
+
+\end{document}
+
+
