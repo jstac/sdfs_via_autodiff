@@ -272,10 +272,11 @@
 %section
 \section{Introduction}
 
-To be added.  Background on Newton's algorithm in $\RR^N$.
+\textcolor{blue}{For now a place to put some notes about ideas.}
 
-Let $f$ be a smooth map from $\RR^N$ to itself.  We want to find the $x \in
-\RR^N$ that solves $f(x)=x$.  Ordinary successive approximation uses
+Background on Newton's algorithm in $\RR^N$.  Let $f$ be a smooth map from
+$\RR^N$ to itself.  We want to find the $x \in \RR^N$ that solves $f(x)=x$.
+Ordinary successive approximation uses
 %
 \begin{equation}
     x_{k+1} = f(x_k)
@@ -289,6 +290,35 @@ satisfying $g(x)=0$, and then iterates on
 \end{equation}
 %
 where $J(x)$ is the Jacobian of $g$ at $x$.
+
+In the EZ fixed point problem, it's not too hard to compute an expression for
+the Jacobian of the fixed point operator, so why use autodiff?  This is a fair
+question.  Here are some thoughts?
+%
+\begin{itemize}
+    \item We can also differentiate the fixed point with respect to the
+        parameters. These gradients help us how the SDF and WC ratio respond
+        to shifts in underlying parameters.  They can also provide Jacobians
+        for gradient decent.
+    \item It's possible to plug other fixed point operators, associated with
+        other specifications of recursive utility, directly into the code.
+        There's no need to compute gradients in each case.
+    \item We might be able to use second order Newton methods, since autodiff
+        can provide derivatives of any order.
+\end{itemize}
+
+General points:
+%
+\begin{itemize}
+    \item By switching from successive approximation to Newton's method, using
+        autodifferentiation to compute the Jacobian, we change the problem
+        from many small iterations to a small number of computationally
+        expensive ones, which offer better opportunities for parallelization. 
+    \item Autodifferentiation is important here, as compared to numerical
+        derivatives, since convergence is fragile for this operator (very slow
+        rate of convergence).
+\end{itemize}
+
 
 \section{A Long Run Risk Model}
 
