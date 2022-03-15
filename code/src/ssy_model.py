@@ -47,8 +47,6 @@ from scipy.optimize import brentq
 from quantecon import MarkovChain, rouwenhorst
 from numba import njit, prange, float32, cuda
 from numpy.random import rand, randn
-import math
-
 
 
 # == Some convenience functions == #
