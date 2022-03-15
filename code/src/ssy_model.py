@@ -47,7 +47,6 @@ from scipy.optimize import brentq
 from quantecon import MarkovChain, rouwenhorst
 from numba import njit, prange, float32, cuda
 from numpy.random import rand, randn
-from collections import namedtuple
 import math
 
 
@@ -90,64 +89,41 @@ def compute_spec_rad(Q):
     return np.max(np.abs(np.linalg.eigvals(Q)))
 
 
-
 class SSY:
     """
-    SSY model. This class assists functions that
+    Stores the SSY model parameters, along with data for two discretized
+    versions of the SSY model:
 
-        - compute the value of the stability coefficient
-        - compute the wealth-consumption ratio
+        - multi-index model with indices l, k, i, j
+        - single index model with index n
 
     """
 
-    def __init__(self, 
-        β=0.999,   # = δ in SSY
-        γ=8.89,
-        ψ=1.97,
-        ρ=0.987,
-        ρ_z=0.992,
-        ρ_c=0.991,
-        ρ_λ=0.959,
-        s_z=np.sqrt(0.0039),
-        s_c=np.sqrt(0.0096),
-        s_λ=0.0004,
-        μ_c=0.0016,
-        φ_z=0.215*0.0035*np.sqrt(1-0.987**2),   # * σ_bar * sqrt(1 - ρ^2)
-        φ_c=1.00*0.0035):                       # * σ_bar
-
+    def __init__(self,
+                 β=0.999,   # = δ in SSY
+                 γ=8.89,
+                 ψ=1.97,
+                 ρ=0.987,
+                 ρ_z=0.992,
+                 ρ_c=0.991,
+                 ρ_λ=0.959,
+                 s_z=np.sqrt(0.0039),
+                 s_c=np.sqrt(0.0096),
+                 s_λ=0.0004,
+                 μ_c=0.0016,
+                 φ_z=0.215*0.0035*np.sqrt(1-0.987**2),   # *σ_bar*sqrt(1-ρ^2)
+                 φ_c=1.00*0.0035):                       # *σ_bar
+                 L=4, K=4, I=4, J=4, 
+                 build_single_index=True):          
+        
+        # Create and store an instance of SSY if one is not assigned
         self.β, self.γ, self.ψ = β, γ, ψ
         self.μ_c,self.ϕ_z, self.ϕ_c = μ_c, ϕ_z, ϕ_c
         self.ρ, self.ρ_z, self.ρ_c, self.ρ_λ = ρ, ρ_z, ρ_c, ρ_λ
         self.s_z, self.s_c, self.s_λ = s_z, s_c, s_λ
         self.θ = (1 - γ) / (1 - 1/ψ)
-
-
-    def unpack(self):
-        " Returns all parameters related to the consumption problem. "
-        return (self.β, self.γ, self.ψ,
-                self.μ_c, self.ρ, self.ϕ_z, self.ϕ_c,
-                self.ρ_z, self.ρ_c, self.ρ_λ,
-                self.s_z, self.s_c, self.s_λ) 
-
-
-class DiscretizedSSY:
-
-    def __init__(self, ssy=None, L=4, K=4, I=4, J=4, build_single_index=True):          
-        """
-        Stores data for two discretized versions of the SSY model:
-
-            - multi-index model with indices l, k, i, j
-            - single index model with index n
-
-        The object ssy is an instance of SSY.
-
-        """
-        
-        # Create and store an instance of SSY if one is not assigned
         self.ssy = SSY() if ssy is None else ssy 
 
-        # Indices
-        self.L, self.K, self.I, self.J = L, K, I, J
 
         # Set up multi-index states and transitions
         (self.h_λ_states, self.h_λ_P,              
@@ -166,7 +142,10 @@ class DiscretizedSSY:
             self.H = self.compute_H()
 
     def unpack(self):
-        return self.ssy.unpack()
+        return (self.β, self.γ, self.ψ,
+                self.μ_c, self.ρ, self.ϕ_z, self.ϕ_c,
+                self.ρ_z, self.ρ_c, self.ρ_λ,
+                self.s_z, self.s_c, self.s_λ) 
 
     def discretize_multi_index(self, L, K, I, J):
         """
@@ -362,7 +341,7 @@ def lininterp_funcvals(ssy, function_vals):
 
 
 
-def wc_loglinear_factory(self):
+def wc_loglinear_factory(ssy):
     """
     A method factory .  It computes the constant terms for the WC ratio
     log linear approximation and then creates a jitted function that
@@ -377,8 +356,8 @@ def wc_loglinear_factory(self):
     (β, γ, ψ, 
         μ_c, ρ, ϕ_z, ϕ_c, 
         ρ_z, ρ_c, ρ_λ, 
-        s_z, s_c, s_λ) = self.unpack()
-    θ = self.θ 
+        s_z, s_c, s_λ) = ssy.unpack()
+    θ = ssy.θ 
 
     s_wc = 2*(φ_c)**2*s_c;
     s_wx = 2*(φ_z)**2*s_z;
@@ -420,7 +399,7 @@ def wc_loglinear_factory(self):
     A0 = fA0(qbar)
 
     # Record the constants within the instance
-    self.Az, self.Ah_λ, self.Ah_z, self.Ah_c, self.A0 = \
+    ssy.Az, ssy.Ah_λ, ssy.Ah_z, ssy.Ah_c, ssy.A0 = \
         Az, Ah_λ, Ah_z, Ah_c, A0 
 
     # Now build the jitted function

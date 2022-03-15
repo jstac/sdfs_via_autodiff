@@ -8,7 +8,7 @@ CPU and JAX based code.
 """
 
 import numpy as np
-from model import *
+from ssy_model import *
 import jax
 import jax.numpy as jnp
 from jax import jit
@@ -23,8 +23,12 @@ config.update("jax_enable_x64", True)
 def fwd_solver(f, 
                x_init, 
                tol=1e-7, 
-               max_iter=1_000_000):
+               max_iter=1_000_000,
+               verbose=True):
     "Uses successive approximation on f."
+
+    if verbose:
+        print("Beginning iteration\n\n")
 
     current_iter = 0
     x = x_init
@@ -34,6 +38,12 @@ def fwd_solver(f,
         error = jnp.max(jnp.abs(x_new - x))
         current_iter += 1
         x = x_new
+
+    if current_iter == max_iter:
+        print(f"Warning: Hit maximum iteration number {max_iter}")
+    else:
+        if verbose:
+            print(f"Iteration converged after {iter} iterations") 
 
     return x, current_iter
 
@@ -66,7 +76,7 @@ def T(w, params):
 T = jit(T)
 
 
-def wc_ratio(dssy, 
+def wc_ratio(model, 
              algorithm="newton",
              init_val=np.exp(5), 
              single_index_output=True,   # output as w[m] or w[l, k, i, j]
@@ -75,39 +85,32 @@ def wc_ratio(dssy,
     Iterate to convergence on the Koopmans operator associated with the SSY
     model and then return the wealth consumption ratio.
 
-    - dssy is an instance of DiscretizedSSY
+    - model is an instance of SSY or GCY
 
     """
 
     # Unpack 
-    (β, γ, ψ, 
-        μ_c, ρ, ϕ_z, ϕ_c, 
-        ρ_z, ρ_c, ρ_λ, 
-        s_z, s_c, s_λ) = dssy.unpack()
-    θ = (1 - γ) / (1 - 1/ψ)
-    N = dssy.N
-    H = dssy.H
+    β = model.β
+    θ = model.θ
+    N = model.N
+    H = model.H
 
     w_init = np.ones(N) * init_val
-    params = H, β, θ 
 
     # Convert arrays to jnp
-    H = jnp.array(H)
     w_init = jnp.array(w_init)
+    H = jnp.array(H)
 
-    if verbose:
-        print("Beginning iteration\n\n")
-
+    # Choose the solver
     solver = newton_solver if algorithm == "newton" else fwd_solver
 
+    # Call the solver
+    params = H, β, θ 
     w_star, iter = fixed_point_interface(solver, T, params, w_init)
 
-    if verbose:
-        print(f"Iteration converged after {iter} iterations") 
-
+    # Return output in desired shape
     if single_index_output:
         w_out = w_star
-
     else:
         w_out = np.empty((L, K, I, J))
         for m in range(M):
