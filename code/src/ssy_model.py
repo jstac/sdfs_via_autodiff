@@ -49,12 +49,7 @@ from numba import njit, prange, float32, cuda
 from numpy.random import rand, randn
 
 
-# == Some convenience functions == #
-
-@njit
-def draw_from_cdf(F, U):
-    " Draws from F when U is uniform on (0, 1) "
-    return np.searchsorted(F, U)
+# == Indexing functions for mapping between multiple and single indices == #
 
 
 @njit
@@ -73,19 +68,13 @@ def single_to_multi(m, K, I, J):
     i, j = split_index(rem, J)
     return (l, k, i, j)
 
-
 @njit
 def multi_to_single(l, k, i , j, K, I, J):
     return l * (K * I * J) + k * (I * J) + i * J + j
 
 
-def compute_spec_rad(Q):
-    """
-    Function to compute spectral radius of a matrix.
 
-    """
-    return np.max(np.abs(np.linalg.eigvals(Q)))
-
+# == The main class definition == #
 
 class SSY:
     """
@@ -110,7 +99,7 @@ class SSY:
                  s_λ=0.0004,
                  μ_c=0.0016,
                  φ_z=0.215*0.0035*np.sqrt(1-0.987**2),   # *σ_bar*sqrt(1-ρ^2)
-                 φ_c=1.00*0.0035):                       # *σ_bar
+                 φ_c=1.00*0.0035,                        # *σ_bar
                  L=4, K=4, I=4, J=4, 
                  build_single_index=True):          
         
@@ -120,18 +109,16 @@ class SSY:
         self.ρ, self.ρ_z, self.ρ_c, self.ρ_λ = ρ, ρ_z, ρ_c, ρ_λ
         self.s_z, self.s_c, self.s_λ = s_z, s_c, s_λ
         self.θ = (1 - γ) / (1 - 1/ψ)
-        self.ssy = SSY() if ssy is None else ssy 
-
 
         # Set up multi-index states and transitions
+        self.L, self.K, self.I, self.J = L, K, I, J 
         (self.h_λ_states, self.h_λ_P,              
          self.h_c_states, self.h_c_P,
          self.h_z_states, self.h_z_P,
          self.z_states,   self.z_Q) = self.discretize_multi_index(L, K, I, J)                
-
         # For convenience, store the sigma states as well
-        self.σ_c_states = self.ssy.ϕ_c * np.exp(self.h_c_states)
-        self.σ_z_states = self.ssy.ϕ_z * np.exp(self.h_z_states)
+        self.σ_c_states = self.ϕ_c * np.exp(self.h_c_states)
+        self.σ_z_states = self.ϕ_z * np.exp(self.h_z_states)
 
         # Single index states and transitions
         if build_single_index:
@@ -336,17 +323,14 @@ def lininterp_funcvals(ssy, function_vals):
 
 
 
-
+## ==== Log linear approximation of the W/C ratio === ##
 
 
 def wc_loglinear_factory(ssy):
     """
-    A method factory .  It computes the constant terms for the WC ratio
-    log linear approximation and then creates a jitted function that
-    evaluates the log linear approximation.
-
-    This factory is called by the __init__ method so that the jitted
-    function is accessible through the class.
+    A factory function that computes the constant terms for the WC ratio log
+    linear approximation and then creates a jitted function that evaluates the
+    log linear approximation.
 
     """
 
