@@ -9,6 +9,7 @@ def fwd_solver(f,
                x_init, 
                tol=1e-7, 
                max_iter=1_000_000,
+               print_skip=10,
                verbose=True):
     "Uses successive approximation on f."
 
@@ -21,6 +22,8 @@ def fwd_solver(f,
     while error > tol and current_iter < max_iter:
         x_new = f(x)
         error = jnp.max(jnp.abs(x_new - x))
+        if verbose and current_iter % print_skip == 0:
+            print("iter = {}, error = {}".format(current_iter, error))
         current_iter += 1
         x = x_new
 
@@ -41,12 +44,14 @@ def newton_solver(f, x_init):
 
 # == Fixed point interface function == #
 
-def fixed_point_interface(solver, f, params, x_init):
+def fixed_point_interface(solver, f, params, x_init, tol=1e-7, verbose=True,
+                          print_skip=10):
     """
     This function marginalizes f to operate on x alone and then calls the
     solver.
     """
-    x_star, num_iter = solver(lambda x: f(x, params), x_init)
+    x_star, num_iter = solver(lambda x: f(x, params), x_init, tol=tol,
+                              verbose=verbose, print_skip=print_skip)
     return x_star, num_iter
 
 
