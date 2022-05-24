@@ -1,8 +1,10 @@
 from ssy_model import SSY
 import jax
 import jax.numpy as jnp
+import numpy as np
 from functools import partial
-from utils import fwd_solver, fixed_point_interface
+from utils import (fwd_solver, AA_solver, fixed_point_interface,
+                   jit_map_coordinates, vals_to_coords)
 from jax.config import config
 
 # Tell JAX to use 64 bit floats
@@ -72,25 +74,6 @@ def next_state(ssy_params, x, η_array):
     z = ρ * x[3] + σ_z * η_array[3]
 
     return jnp.array([h_λ, h_c, h_z, z])
-
-
-@jax.jit
-def jit_map_coordinates(vals, coords):
-    return jax.scipy.ndimage.map_coordinates(vals, coords, order=1,
-                                             mode='nearest')
-
-
-def vals_to_coords(grids, x_vals):
-    # jax.jit doesn't allow dynamic shapes
-    dim = 4
-
-    intervals = jnp.asarray([grid[1] - grid[0] for grid in grids])
-    low_bounds = jnp.asarray([grid[0] for grid in grids])
-
-    intervals = intervals.reshape(dim, 1)
-    low_bounds = low_bounds.reshape(dim, 1)
-
-    return (x_vals - low_bounds) / intervals
 
 
 @partial(jax.vmap, in_axes=(0, None, None, None, None))
@@ -163,7 +146,9 @@ def fun_factory(params, batch_size=10000):
 def wc_ratio_continuous(ssy, h_λ_grid_size=10, h_c_grid_size=10,
                         h_z_grid_size=10, z_grid_size=20, num_std_devs=3.2,
                         mc_draw_size=2000, w_init=None, seed=1234,
-                        ram_free=20, tol=1e-5, verbose=True, print_skip=10):
+                        ram_free=20, tol=1e-5, algorithm="fwd", verbose=True,
+                        print_skip=10, write_to_file=True,
+                        filename='w_star_data.npy'):
     """
     Iterate to convergence on the Koopmans operator associated with the SSY
     model and then return the wealth consumption ratio.
@@ -194,75 +179,51 @@ def wc_ratio_continuous(ssy, h_λ_grid_size=10, h_c_grid_size=10,
     params = ssy_params, grids, mc_draws
     T = fun_factory(params, batch_size=batch_size)
 
-    solver = fwd_solver
+    algo_dict = {"AA": AA_solver,
+                 "fwd": fwd_solver}
+    try:
+        solver = algo_dict[algorithm]
+    except KeyError:
+        print("Algorithm not existed. Please choose from:", algo_dict.keys())
+        print("Using backup: fwd_solver")
+        solver = fwd_solver
 
     w_star, iter = fixed_point_interface(solver, T, params, w_init, tol=tol,
                                          verbose=verbose,
                                          print_skip=print_skip)
 
-    return w_star
+    if write_to_file:
+        # Save results
+        with open(filename, 'wb') as f:
+            np.save(f, grids)
+            np.save(f, w_star)
+
+    return grids, w_star
 
 
-# old versions
-
-# def wc_operator_continuous(ssy_params, w_in, grids, mc_draws,
-#                            batch_size=10000):
-#     (β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ) = ssy_params
-#     θ = (1-γ) / (1-(1/ψ))
-#     h_λ_grid, h_c_grid, h_z_grid, z_grid = grids
-
-#     # Grid sizes
-#     nh_λ = len(h_λ_grid)
-#     nh_c = len(h_c_grid)
-#     nh_z = len(h_z_grid)
-#     nz = len(z_grid)
-
-#     g_vals = w_in**θ
-
-#     def Kg(x_array, batch_size=batch_size):
-#         """Return Kg for an array of states with x_array.shape = (n, 4).
-#         The computation is done in batches using vmap to reduce memory usage.
-#         """
-#         res = jnp.array([])
-#         n = x_array.shape[0] // batch_size
-#         rem = x_array.shape[0] - n*batch_size
-#         for i in range(n):
-#             start = i*batch_size
-#             end = start + batch_size
-#             res = jnp.append(res, Kg_vmap(x_array[start:end], ssy_params,
-#                              g_vals, grids, mc_draws))
-#         if rem > 0:
-#             res = jnp.append(res, Kg_vmap(x_array[-rem:], ssy_params, g_vals,
-#                                           grids, mc_draws))
-#         return res
-
-#     # flatten the states for computation
-#     mesh_grids = jnp.meshgrid(*grids, indexing='ij')
-#     x_array = jnp.stack([grid.ravel() for grid in mesh_grids], axis=1)
-
-#     # Compute Kg and reshape back
-#     if x_array.shape[0] <= batch_size:
-#         Kg_out = Kg_vmap(x_array, ssy_params, g_vals, grids, mc_draws)
-#         Kg_out = Kg_out.reshape(nh_λ, nh_c, nh_z, nz)
-#     else:
-#         Kg_out = Kg(x_array).reshape(nh_λ, nh_c, nh_z, nz)
-#     w_out = 1 + β * Kg_out**(1/θ)
-
-#     return w_out
+# =============================== #
+# == Build callables from data == #
+# =============================== #
 
 
-# @jax.jit
-# def next_state(ssy_params, x, η_array):
-#     """
-#     Generate an array of states in the next period given current state
-#     x = (z, h_z, h_c, h_λ) and an array of shocks.
-#     """
-#     (β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ) = ssy_params
-#     ρ_array = jnp.array([ρ_λ, ρ_c, ρ_z, ρ])
-#     σ_z = φ_z * jnp.exp(x[3])
-#     s_array = jnp.array([s_λ, s_c, s_z, σ_z])
+def construct_wstar_callable(datafile='w_star_data.npy'):
+    """
+    Builds and returns a jitted callable that implements an approximation of
+    the function w_star by linear interpolation over the grid.
 
-#     # reshape for broadcasting
-#     # x_out.shape = η_array
-#     x_out = (jnp.diag(ρ_array) @ x).reshape(4, 1) + jnp.diag(s_array) @ η_array
-#     return x_out
+    Data for the callable is read from disk.
+
+    """
+
+    with open(datafile, 'rb') as f:
+        grids = np.load(f)
+        w_star_vals = np.load(f)
+
+    grids = jnp.asarray(grids)
+    w_star_vals = jnp.asarray(w_star_vals)
+
+    def w_star_func(x):
+        x_coord = vals_to_coords(grids, jnp.asarray(x).reshape(4, -1))
+        return jit_map_coordinates(w_star_vals, x_coord)
+
+    return w_star_func
