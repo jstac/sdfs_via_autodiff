@@ -32,7 +32,7 @@ T = jax.jit(T)
 
 def wc_ratio_single_index(model, 
                  algorithm="newton",
-                 init_val=np.exp(5), 
+                 init_val=800, 
                  single_index_output=False,   # output as w[m] or w[l, k, i, j]
                  verbose=True):
     """
@@ -66,6 +66,8 @@ def wc_ratio_single_index(model,
     if single_index_output:
         w_out = w_star
     else:
+        L, K, I, J = model.L, model.K, model.I, model.J
+        M = L * K * I * J
         w_out = np.empty((L, K, I, J))
         for m in range(M):
             l, k, i, j = single_to_multi(m, K, I, J)

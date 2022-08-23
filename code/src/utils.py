@@ -9,10 +9,10 @@ import jaxopt
 
 def fwd_solver(f,
                x_init,
-               tol=1e-7,
-               max_iter=1_000_000,
-               print_skip=10,
-               verbose=True):
+               tol,
+               max_iter,
+               verbose,
+               print_skip):
     "Uses successive approximation on f."
 
     if verbose:
@@ -38,8 +38,12 @@ def fwd_solver(f,
     return x, current_iter
 
 
-def AA_solver(f, x_init, tol=1e-7, max_iter=10000, verbose=True,
-              print_skip=10):
+def AA_solver(f, 
+              x_init, 
+              tol, 
+              max_iter, 
+              verbose,
+              print_skip):
     # hard coded parameters for now
     AA = jaxopt.AndersonAcceleration(f, verbose=verbose, mixing_frequency=5,
                                      tol=tol, maxiter=max_iter, history_size=2,
@@ -58,23 +62,45 @@ def AA_solver(f, x_init, tol=1e-7, max_iter=10000, verbose=True,
     return w_out, current_iter
 
 
-def newton_solver(f, x_init):
+def newton_solver(f, 
+                  x_init, 
+                  tol, 
+                  max_iter,
+                  verbose,
+                  print_skip):
     "Apply Newton's algorithm."
-    f_root = lambda x: f(x) - x
-    g = lambda x: x - jnp.linalg.solve(jax.jacobian(f_root)(x), f_root(x))
-    return fwd_solver(g, x_init)
+    g = lambda x: f(x) - x
+    def h(x):
+        y = g(x)
+        jac_x_prod = lambda z: jax.jvp(g, (x,), (z,))[1]
+        b = jax.scipy.sparse.linalg.bicgstab(jac_x_prod, y)[0]
+        #b = jax.scipy.sparse.linalg.cg(jac_x_prod, y)[0]
+        #b = jnp.linalg.solve(jax.jacobian(g)(x), y)
+        #b = jax.scipy.sparse.linalg.bicgstab(jax.jacobian(g)(x), y)[0]
+        return x - b
+    return fwd_solver(h, x_init, tol, max_iter, verbose, print_skip)
 
 
 # == Fixed point interface function == #
 
-def fixed_point_interface(solver, f, params, x_init, tol=1e-7, verbose=True,
+def fixed_point_interface(solver, 
+                          f, 
+                          params, 
+                          x_init, 
+                          tol=1e-7, 
+                          max_iter=1_000_000, 
+                          verbose=True,
                           print_skip=10):
     """
     This function marginalizes f to operate on x alone and then calls the
     solver.
     """
-    x_star, num_iter = solver(lambda x: f(x, params), x_init, tol=tol,
-                              verbose=verbose, print_skip=print_skip)
+    x_star, num_iter = solver(lambda x: f(x, params), 
+                              x_init, 
+                              tol,
+                              max_iter,
+                              verbose, 
+                              print_skip)
     return x_star, num_iter
 
 
