@@ -344,7 +344,58 @@ assumed to be independent.
 
 
 
-\subsection{The SSY Model}
+
+In the model, the wealth-consumption ratio obeys
+%
+\begin{equation*}
+    \beta^{\theta}
+    \EE_t
+    \left[
+    \left( \frac{\lambda_{t+1}}{\lambda_t} \right)^\theta
+        \left( \frac{C_{t+1}}{C_t} \right)^{1-\gamma}
+        \left( \frac{w(X_{t+1})}{w(X_t)-1} \right)^\theta
+    \right] = 1
+\end{equation*}
+%
+Rearranging the previous expression gives
+%
+\begin{equation*}
+    (w(X_t)-1)^\theta
+    = \beta^{\theta}
+    \EE_t
+    \left[
+    \left( \frac{\lambda_{t+1}}{\lambda_t} \right)^\theta
+        \left( \frac{C_{t+1}}{C_t} \right)^{1-\gamma}
+        w(X_{t+1})^\theta
+    \right].
+\end{equation*}
+%
+
+Let $\HH$ be the linear operator defined by
+%
+\begin{equation}\label{eq:defk}
+    (\HH g)(x) = \EE_x 
+        \, g(X_{t+1})  \,
+        \exp
+        \left[ 
+            \theta g_\lambda(X_t, X_{t+1}, \xi_{t+1}) + (1-\gamma) g_c(X_t, X_{t+1}, \xi_{t+1}))
+        \right]
+\end{equation}
+%
+at each $x \in \XX$,  where $\EE_x$ conditions on $X_t = x$.
+Conditioning on $X_t = x$, writing pointwise on $\XX$ and using the definition
+of $\HH$ yields $w = 1 + \beta \left( \HH w^\theta \right)^{1/\theta}$.  A
+function $w$ solves this equation if and only if $w$ is a fixed point
+of the operator $\TT$ defined by 
+%
+\begin{equation}\label{eq:wcop}
+    (\TT w) = 1 + \beta \,  (\HH w^\theta)^{1/\theta}.
+\end{equation}
+%
+
+
+
+\subsection{The SSY Case}
 
 In the long run risk model of \cite{schorfheide2018identifying}, the state
 process takes the form 
@@ -393,68 +444,8 @@ The innovations
 %
 are all independent and standard normal.  
 
-Let $\HH$ be the linear operator defined by
-%
-\begin{equation}\label{eq:defk}
-    (\HH g)(x) = \EE_x 
-        \, g(X_{t+1})  \,
-        \exp
-        \left[ 
-            \theta g_{\lambda, t+1} + (1-\gamma) g_{c, t+1})
-        \right]
-\end{equation}
-%
-at each $x \in \XX$,  where $\EE_x$ conditions on $X_t = x$.
 
-
-From \cite{schorfheide2018identifying}, the stochatic discount factor process
-$(M_t)$ takes the form
-%
-\begin{equation}\label{eq:ssysdf}
-    M_{t+1} = 
-    \beta^\theta
-    \left(\frac{\lambda_{t+1}}{\lambda_t} \right)^\theta
-    \left(\frac{C_{t+1}}{C_t} \right)^{-\gamma}
-    \left(\frac{w(X_{t+1})}{w(X_t) - 1} \right)^{\theta - 1},
-\end{equation}
-%
-where $w(X_t)$ is the aggregate wealth-consumption ratio $w(X_t) := W_t / C_t$. 
-
-In the model, the this ratio obeys
-%
-\begin{equation*}
-    \beta^{\theta}
-    \EE_t
-    \left[
-    \left( \frac{\lambda_{t+1}}{\lambda_t} \right)^\theta
-        \left( \frac{C_{t+1}}{C_t} \right)^{1-\gamma}
-        \left( \frac{w(X_{t+1})}{w(X_t)-1} \right)^\theta
-    \right] = 1
-\end{equation*}
-%
-Rearranging the previous expression gives
-%
-\begin{equation*}
-    (w(X_t)-1)^\theta
-    = \beta^{\theta}
-    \EE_t
-    \left[
-    \left( \frac{\lambda_{t+1}}{\lambda_t} \right)^\theta
-        \left( \frac{C_{t+1}}{C_t} \right)^{1-\gamma}
-        w(X_{t+1})^\theta
-    \right].
-\end{equation*}
-%
-
-Conditioning on $X_t = x$, writing pointwise on $\XX$ and using the definition
-of $\HH$ yields $w = 1 + \beta \left( \HH w^\theta \right)^{1/\theta}$.  A
-function $w$ solves this equation if and only if $w$ is a fixed point
-of the operator $\TT$ defined by 
-%
-\begin{equation}\label{eq:wcop}
-    (\TT w) = 1 + \beta \,  (\HH w^\theta)^{1/\theta}.
-\end{equation}
-%
+\subsection{Discretization}
 
 For computation, the state process is distcretized onto a state space $S =
 \{x_1, \ldots, x_N\}$ of size $N \in \NN$ and the operator $\HH$ is

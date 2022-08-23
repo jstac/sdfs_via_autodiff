@@ -33,7 +33,7 @@ T = jax.jit(T)
 def wc_ratio_single_index(model, 
                  algorithm="newton",
                  init_val=np.exp(5), 
-                 single_index_output=True,   # output as w[m] or w[l, k, i, j]
+                 single_index_output=False,   # output as w[m] or w[l, k, i, j]
                  verbose=True):
     """
     Iterate to convergence on the Koopmans operator associated with the SSY

@@ -37,23 +37,27 @@ def T(w, params):
      σ_c_states, σ_z_states) = params
 
     # Create intermediate arrays
-    Z1 = jnp.reshape(jnp.exp(θ * h_λ_states), (1, L))
-    Pλ = h_λ_P * Z1
-    Z2 = jnp.reshape(jnp.exp(0.5*((1-γ)*σ_c_states)**2), (K, 1))
-    Pc = h_c_P * Z2
-    Z3 = jnp.reshape(jnp.exp((1-γ)*(μ_c+z_states)), (I, J, 1))
-    Pz = z_Q * Z3
+    B1 = jnp.exp(θ * h_λ_states)
+    B1 = jnp.reshape(B1, (1, 1, 1, 1, L, 1, 1, 1))
 
-    # Reshape prior to summing
-    Pλ = jnp.reshape(Pλ, (L, 1, 1, 1, L, 1, 1, 1))
-    Pc = jnp.reshape(Pc, (1, K, 1, 1, 1, K, 1, 1))
-    h_z_P = jnp.reshape(h_z_P, (1, 1, I, 1, 1, 1, I, 1))
-    Pz = jnp.reshape(Pz, (1, 1, I, J, 1, 1, 1, J))
+    B2 = jnp.exp(0.5*((1-γ)*σ_c_states)**2)
+    B2 = jnp.reshape(B2, (1, K, 1, 1, 1, 1, 1, 1))
+
+    B3 = jnp.exp((1-γ)*(μ_c+z_states))
+    B3 = jnp.reshape(B3, (1, 1, I, J, 1, 1, 1, 1))
+
+    # Reshape existing matrices prior to summing
+    Phλ = jnp.reshape(h_λ_P, (L, 1, 1, 1, L, 1, 1, 1))
+    Phc = jnp.reshape(h_c_P, (1, K, 1, 1, 1, K, 1, 1))
+    Phz = jnp.reshape(h_z_P, (1, 1, I, 1, 1, 1, I, 1))
+    Pz = jnp.reshape(z_Q, (1, 1, I, J, 1, 1, 1, J))
     w = jnp.reshape(w, (1, 1, 1, 1, L, K, I, J))
 
-    # Sum along last four axes
-    return jnp.sum(Pλ * Pc * h_z_P * Pz * w, axis=(4, 5, 6, 7))
+    # Take product and sum along last four axes
+    A = (w**θ * B1 * B2 * B3 * Phλ * Phc * Phz * Pz
 
+    Tw = 1 + β * (jnp.dot(H, (w**θ)))**(1/θ)
+    return Tw
 #T = jax.jit(T)
 
 
