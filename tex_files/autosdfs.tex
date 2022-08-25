@@ -235,8 +235,9 @@
 
 \begin{center}
     \LARGE 
-    Automatic Differentiation Methods for Analyzing Wealth-Consumption Ratios
-    and Stochastic Discount Factors\blfootnote{To be added}
+    Computing Stochastic Discount Factors via Automatic Differentiation and
+    Accelerated Linear Algebra
+    \blfootnote{To be added}
  
     \vspace{1em}
 
@@ -271,6 +272,29 @@
 
 %section
 \section{Introduction}
+
+In discrete-time no-arbitrage environments, the equilibrium price process
+$\{P_t\}_{t \geq 0}$ associated with a cash flow $\{G_t\}_{t \geq 1}$ obeys
+the fundamental recursion
+%
+\begin{equation}
+    \label{eq:pd}
+    P_t
+    = \EE_t \, M_{t+1} ( P_{t+1} + G_{t+1} )
+    \quad \text{for all } t \geq 0,
+\end{equation}
+%
+where $\{ M_t\}$ is the sequence of single period stochastic discount factors
+(see, for example,~\cite{kreps1981arbitrage}, \cite{hansen_richard:1987}
+or~\cite{duffie2001dynamic}).\footnote{Equation~\eqref{eq:pd} assumes an
+    ex-dividend contract, so that purchasing a claim to the asset at time $t$
+entitles the buyer to the cash flow starting from date $t+1$.}  Most of the
+well-known ``puzzles'' in asset pricing theory relate to the difficulty of
+matching \eqref{eq:pd} to the data across a diverse range of asset classes.
+Attempts to resolve these puzzles typically involve relatively sophisticated
+models for the stochastic discount factor (SDF) process $\{ M_t\}$.
+
+Most modern asset pricing models use 
 
 \textcolor{blue}{For now a place to put some notes about ideas.}
 

@@ -18,16 +18,14 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 
 
-
 # == Operator == #
 
+@jax.jit
 def T(w, params):
     "T via JAX operations."
     H, β, θ = params
     Tw = 1 + β * (jnp.dot(H, (w**θ)))**(1/θ)
     return Tw
-
-T = jax.jit(T)
 
 
 def wc_ratio_single_index(model, 
@@ -44,23 +42,26 @@ def wc_ratio_single_index(model,
     """
 
     # Unpack 
-    β = model.β
-    θ = model.θ
-    N = model.N
-    H = model.H
-
-    w_init = np.ones(N) * init_val
-
-    # Convert arrays to jnp
-    w_init = jax.device_put(w_init)
-    H = jax.device_put(H)
-
-    # Choose the solver
-    solver = newton_solver if algorithm == "newton" else fwd_solver
-
-    # Call the solver
+    β, θ, N, H = model.β, model.θ, model.N, model.H
+    H = jax.device_put(H)  # Put H on the device (GPU)
     params = H, β, θ 
-    w_star, iter = fixed_point_interface(solver, T, params, w_init)
+
+    w_init = jnp.ones(N) * init_val
+
+    try:
+        solver = solvers[algorithm]
+    except KeyError:
+        msg = f"""\
+                  Algorithm {algorithm} not found.  
+                  Falling back to successive approximation.
+               """
+        print(dedent(msg))
+        solver = fwd_solver
+
+    # Marginalize T given the parameters
+    T_operator = lambda x: T(x, params)
+    # Call the solver
+    w_star, num_iter = solver(T_operator, w_init)
 
     # Return output in desired shape
     if single_index_output:
@@ -74,4 +75,3 @@ def wc_ratio_single_index(model,
             w_out[l, k, i, j] = w_star[m]
 
     return w_out
-

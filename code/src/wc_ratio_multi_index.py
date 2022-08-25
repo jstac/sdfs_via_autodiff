@@ -1,12 +1,6 @@
 """
-
-=== Not currently working, probably will be discarded ===
-
 Multi-index routines for computing the wealth consumption ratio of the SSY
 model.
-
-CPU and JAX based code.
-
 
 """
 
@@ -17,15 +11,18 @@ import jax
 import jax.numpy as jnp
 from jax.config import config
 
-# Tell JAX to use 64 bit floats
+# Optionally tell JAX to use 64 bit floats
 config.update("jax_enable_x64", True)
-
 
 
 # == Operator == #
 
 def _T(w, shapes, constants, arrays):
-    "T via JAX operations."
+    """
+    Implement the operator T via JAX operations.  In the call signature, we
+    differentiate between static parameters and arrays to help the JIT
+    compiler.
+    """
 
     # Unpack
     L, K, I, J = shapes
@@ -39,14 +36,12 @@ def _T(w, shapes, constants, arrays):
     # Create intermediate arrays
     B1 = jnp.exp(θ * h_λ_states)
     B1 = jnp.reshape(B1, (1, 1, 1, 1, L, 1, 1, 1))
-
     B2 = jnp.exp(0.5*((1-γ)*σ_c_states)**2)
     B2 = jnp.reshape(B2, (1, K, 1, 1, 1, 1, 1, 1))
-
     B3 = jnp.exp((1-γ)*(μ_c+z_states))
     B3 = jnp.reshape(B3, (1, 1, I, J, 1, 1, 1, 1))
 
-    # Reshape existing matrices prior to summing
+    # Reshape existing matrices prior to reduction
     Phλ = jnp.reshape(h_λ_P, (L, 1, 1, 1, L, 1, 1, 1))
     Phc = jnp.reshape(h_c_P, (1, K, 1, 1, 1, K, 1, 1))
     Phz = jnp.reshape(h_z_P, (1, 1, I, 1, 1, 1, I, 1))
@@ -57,13 +52,14 @@ def _T(w, shapes, constants, arrays):
     A = w**θ * B1 * B2 * B3 * Phλ * Phc * Phz * Pz
     B = np.sum(A, axis=(4, 5, 6, 7))
 
+    # Define and return Tw
     Tw = 1 + β * B**(1/θ)
-
     return Tw
 
 _T = jax.jit(_T, static_argnums=(1, 2))
 
 def T(w, params):
+    "A version of T with a simplified interface."
 
     (L, K, I, J,
     β, θ, γ, μ_c,
@@ -82,13 +78,11 @@ def T(w, params):
               σ_c_states, σ_z_states) 
     return _T(w, shapes, constants, arrays)
 
-    
-
 
 def wc_ratio_multi_index(model, 
-                          algorithm="newton",
-                          init_val=800, 
-                          verbose=True):
+                         algorithm="newton",
+                         init_val=800, 
+                         verbose=True):
     """
     Iterate to convergence on the Koopmans operator associated with the SSY
     model and then return the wealth consumption ratio.
@@ -96,8 +90,6 @@ def wc_ratio_multi_index(model,
     - model is an instance of SSY or GCY
 
     """
-
-
     # Unpack 
     m = model
     params = (m.L, m.K, m.I, m.J,
@@ -108,13 +100,23 @@ def wc_ratio_multi_index(model,
               m.z_states,   m.z_Q,
               m.σ_c_states, m.σ_z_states) 
 
+    # Marginalize T given the parameters
+    T_operator = lambda x: T(x, params)
+    # Set up the initial condition for the fixed point search
     w_init = jnp.ones((m.L, m.K, m.I, m.J)) * init_val
 
-    # Choose the solver
-    solver = newton_solver if algorithm == "newton" else fwd_solver
+    try:
+        solver = solvers[algorithm]
+    except KeyError:
+        msg = f"""\
+                  Algorithm {algorithm} not found.  
+                  Falling back to successive approximation.
+               """
+        print(dedent(msg))
+        solver = fwd_solver
 
     # Call the solver
-    w_star, iter = fixed_point_interface(solver, T, params, w_init)
+    w_star, num_iter = solver(T_operator, w_init)
 
     return w_star
 
