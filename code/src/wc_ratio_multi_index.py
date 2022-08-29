@@ -64,10 +64,10 @@ def T(w, params):
     (L, K, I, J,
     β, θ, γ, μ_c,
     h_λ_states, h_λ_P,              
-              h_c_states, h_c_P,
-              h_z_states, h_z_P,
-              z_states,   z_Q,
-              σ_c_states, σ_z_states) = params
+      h_c_states, h_c_P,
+      h_z_states, h_z_P,
+      z_states,   z_Q,
+      σ_c_states, σ_z_states) = params
 
     shapes = L, K, I, J
     constants = β, θ, γ, μ_c,
