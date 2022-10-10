@@ -235,8 +235,8 @@
 
 \begin{center}
     \LARGE 
-    Computing Stochastic Discount Factors via Automatic Differentiation and
-    Accelerated Linear Algebra
+    Solving High-Dimensional Asset Pricing Models using Automatic
+    Differentiation and Accelerated Linear Algebra
     \blfootnote{To be added}
  
     \vspace{1em}
@@ -272,6 +272,19 @@
 
 %section
 \section{Introduction}
+
+As in many other areas in economics and finance, researchers working on asset
+pricing face the need to handle a growing list of state variables when trying
+to match existing theory to the data.  For example, while the heavily cited
+paper of \cite{bansal2004risks} used just two state variables to model the
+wealth-consumption ratio (a stationary expected growth rate process and a
+stochastic volatility term), subsequent work has added many features to the
+consumption side of this model.  For example,
+\cite{schorfheide2018identifying} added preference shocks and an additional
+stochastic volatility term, leading to four state variables.
+
+
+\section{Asset Pricing Background}
 
 In discrete-time no-arbitrage environments, the equilibrium price process
 $\{P_t\}_{t \geq 0}$ associated with a cash flow $\{G_t\}_{t \geq 1}$ obeys

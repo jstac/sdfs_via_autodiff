@@ -46,7 +46,7 @@ def newton_solver(f,
                   x_init, 
                   tol=default_tolerance, 
                   max_iter=default_max_iter,
-                  bicgstab_atol=1e-7,
+                  bicgstab_atol=1e-4,
                   verbose=True,
                   print_skip=1):
     """
