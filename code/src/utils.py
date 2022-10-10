@@ -46,6 +46,7 @@ def newton_solver(f,
                   x_init, 
                   tol=default_tolerance, 
                   max_iter=default_max_iter,
+                  bicgstab_atol=1e-7,
                   verbose=True,
                   print_skip=1):
     """
@@ -80,7 +81,9 @@ def newton_solver(f,
         # Next we compute J(x)^{-1} g(x).  Currently we use 
         # sparse.linalg.bicgstab. Another option is sparse.linalg.bc
         # but this operation seems to be less stable.
-        b = jax.scipy.sparse.linalg.bicgstab(jac_x_prod, g(x))[0]
+        b = jax.scipy.sparse.linalg.bicgstab(
+                jac_x_prod, g(x), 
+                atol=bicgstab_atol)[0]
         return x - b
     return fwd_solver(q, x_init, tol, max_iter, verbose, print_skip)
 

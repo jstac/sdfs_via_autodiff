@@ -101,7 +101,7 @@ class SSY:
                  φ_z=0.215*0.0035*np.sqrt(1-0.987**2),   # *σ_bar*sqrt(1-ρ^2)
                  φ_c=1.00*0.0035,                        # *σ_bar
                  L=4, K=4, I=4, J=4,
-                 build_single_index=True):
+                 build_single_index=False):
 
         # Create and store an instance of SSY if one is not assigned
         self.β, self.γ, self.ψ = β, γ, ψ
@@ -228,9 +228,7 @@ class SSY:
                           ssy.σ_z_states,
                           ssy.z_states,
                           ssy.P_x)
-
         return H
-
 
 
 @njit
@@ -252,7 +250,6 @@ def _build_single_index_arrays(L, K, I, J,
         for mp in range(N):
             lp, kp, ip, jp = single_to_multi(mp, K, I, J)
             P_x[m, mp] = h_λ_P[l, lp] * h_c_P[k, kp] * h_z_P[i, ip] * z_Q[i, j, jp]
-
 
 
 @njit
@@ -286,7 +283,6 @@ def _compute_H(ssy_params,
 
 
 ## == Other utilities == ##
-
 
 def lininterp_funcvals(ssy, function_vals):
     """
@@ -324,7 +320,6 @@ def lininterp_funcvals(ssy, function_vals):
 
 
 ## ==== Log linear approximation of the W/C ratio === ##
-
 
 def wc_loglinear_factory(ssy):
     """
