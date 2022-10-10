@@ -273,7 +273,7 @@
 %section
 \section{Introduction}
 
-As in many other areas in economics and finance, researchers working on asset
+As with many sub-fields in economics and finance, researchers working on asset
 pricing face the need to handle a growing list of state variables when trying
 to match existing theory to the data.  For example, while the heavily cited
 paper of \cite{bansal2004risks} used just two state variables to model the
@@ -282,6 +282,28 @@ stochastic volatility term), subsequent work has added many features to the
 consumption side of this model.  For example,
 \cite{schorfheide2018identifying} added preference shocks and an additional
 stochastic volatility term, leading to four state variables.
+\cite{gomez2021important} added two more state variables to handle
+expectations of inflation.  
+
+While six state variables is a tiny amount in some fields (e.g., linear
+programming problems), quantitative analysis for asset pricing faces several
+related problems.  First, models like the ones listed above are highly
+nonlinear and, moreover, these nonlinearities matter for endogenous quantities
+of interest, such as the risk premium (see, e.g., \cite{pohl2018higher}).
+Second, discount factors are very close to unity (e.g., 0.998 in
+\cite{bansal2004risks}), implying slow convergence of global iterative
+solution methods.  Third, the consumption problem is embedded in a larger
+model with still more state variables.  Fourth, the model needs to be solved
+at many different parameterizations in order to fit the data.
+
+In this paper we show how to rapidly approximate global solutions to the kinds
+of asset pricing models listed above using GPU computing based on Google JAX.
+
+Short history of JAX, discussion of its capabilities.
+
+Some explanation of what we achieve.
+
+Review of related literature.
 
 
 \section{Asset Pricing Background}

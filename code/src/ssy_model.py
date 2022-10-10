@@ -49,33 +49,6 @@ from numba import njit, prange, float32, cuda
 from numpy.random import rand, randn
 
 
-# == Indexing functions for mapping between multiple and single indices == #
-
-
-@njit
-def split_index(i, M):
-    """
-    A utility function for the multi-index.
-    """
-    div = i // M
-    rem = i % M
-    return (div, rem)
-
-@njit
-def single_to_multi(m, K, I, J):
-    l, rem = split_index(m, K * I * J)
-    k, rem = split_index(rem, I * J)
-    i, j = split_index(rem, J)
-    return (l, k, i, j)
-
-@njit
-def multi_to_single(l, k, i , j, K, I, J):
-    return l * (K * I * J) + k * (I * J) + i * J + j
-
-
-
-# == The main class definition == #
-
 class SSY:
     """
     Stores the SSY model parameters, along with data for two discretized
@@ -100,31 +73,25 @@ class SSY:
                  μ_c=0.0016,
                  φ_z=0.215*0.0035*np.sqrt(1-0.987**2),   # *σ_bar*sqrt(1-ρ^2)
                  φ_c=1.00*0.0035,                        # *σ_bar
-                 L=4, K=4, I=4, J=4,
-                 build_single_index=False):
+                 L=4, K=4, I=4, J=4):
 
-        # Create and store an instance of SSY if one is not assigned
+        # Unpack
         self.β, self.γ, self.ψ = β, γ, ψ
         self.μ_c,self.ϕ_z, self.ϕ_c = μ_c, ϕ_z, ϕ_c
         self.ρ, self.ρ_z, self.ρ_c, self.ρ_λ = ρ, ρ_z, ρ_c, ρ_λ
         self.s_z, self.s_c, self.s_λ = s_z, s_c, s_λ
         self.θ = (1 - γ) / (1 - 1/ψ)
 
-        # Set up multi-index states and transitions
+        # Set up states and transitions
         self.L, self.K, self.I, self.J = L, K, I, J
         (self.h_λ_states, self.h_λ_P,
          self.h_c_states, self.h_c_P,
          self.h_z_states, self.h_z_P,
          self.z_states,   self.z_Q) = self.discretize_multi_index(L, K, I, J)
+
         # For convenience, store the sigma states as well
         self.σ_c_states = self.ϕ_c * np.exp(self.h_c_states)
         self.σ_z_states = self.ϕ_z * np.exp(self.h_z_states)
-
-        # Single index states and transitions
-        if build_single_index:
-            self.N = L * K * I * J
-            self.x_states, self.P_x = self.discretize_single_index()
-            self.H = self.compute_H()
 
     def unpack(self):
         return (self.β, self.γ, self.ψ,
@@ -134,7 +101,7 @@ class SSY:
 
     def discretize_multi_index(self, L, K, I, J):
         """
-        Discretize the SSY model, using a multi-index, as discussed above.
+        Discretize the SSY model using a multi-index.
 
         The discretization uses iterations of the Rouwenhorst method.  The
         indices are
@@ -173,112 +140,6 @@ class SSY:
                 h_c_states,  h_c_mc.P,
                 h_z_states,  h_z_mc.P,
                 z_states,    z_Q)
-
-
-    def discretize_single_index(self):
-        """
-        Build the single index state process.  The discretized version is
-        converted into single index form to facilitate matrix operations.
-
-        The rule for the index is
-
-            n = n(l, k, i, j) = l * (K * I * J) + k * (I * J) + i * J + j
-
-        where n is in range(N) with N = L * K * I * J.
-
-        We store a Markov chain with states
-
-            x_states[n] := (h_λ[l], σ_c[k], σ_z[i], z[i,j])
-
-        A stochastic matrix P_x gives transition probabilitites, so
-
-            P_x[n, np] = probability of transition x[n] -> x[np]
-
-
-        """
-        # Unpack
-        L, K, I, J = self.L, self.K, self.I, self.J
-        N = L * K * I * J
-
-        # Allocate arrays
-        P_x = np.zeros((N, N))
-        x_states = np.zeros((4, N))
-
-        # Populate arrays
-        state_arrays = (self.h_λ_states, self.h_c_states,
-                        self.h_z_states, self.z_states)
-        prob_arrays = self.h_λ_P, self.h_c_P, self.h_z_P, self.z_Q
-        _build_single_index_arrays(
-                L, K, I, J, state_arrays, prob_arrays, x_states, P_x
-        )
-        return x_states, P_x
-
-
-    def compute_H(ssy):
-        """
-        Compute the matrix H in the SSY model using the single-index
-        framework.
-
-        """
-
-        H = _compute_H(ssy.unpack(),
-                          ssy.L, ssy.K, ssy.I, ssy.J,
-                          ssy.h_λ_states,
-                          ssy.σ_c_states,
-                          ssy.σ_z_states,
-                          ssy.z_states,
-                          ssy.P_x)
-        return H
-
-
-@njit
-def _build_single_index_arrays(L, K, I, J,
-                               state_arrays,
-                               prob_arrays,
-                               x_states,
-                               P_x):
-
-    h_λ_states, h_c_states, h_z_states, z_states = state_arrays
-    h_λ_P, h_c_P, h_z_P, z_Q = prob_arrays
-
-    N = L * K * I * J
-
-    for m in range(N):
-        l, k, i, j = single_to_multi(m, K, I, J)
-        x_states[:, m] = (h_λ_states[l],
-                          h_c_states[k], h_z_states[i], z_states[i, j])
-        for mp in range(N):
-            lp, kp, ip, jp = single_to_multi(mp, K, I, J)
-            P_x[m, mp] = h_λ_P[l, lp] * h_c_P[k, kp] * h_z_P[i, ip] * z_Q[i, j, jp]
-
-
-@njit
-def _compute_H(ssy_params,
-               L, K, I, J,
-               h_λ_states,
-               σ_c_states,
-               σ_z_states,
-               z_states,
-               P_x):
-    # Unpack
-    (β, γ, ψ,
-        μ_c, ρ, ϕ_z, ϕ_c,
-        ρ_z, ρ_c, ρ_λ,
-        s_z, s_c, s_λ) = ssy_params
-    N = L * K * I * J
-    θ = (1 - γ) / (1 - 1/ψ)
-    H = np.empty((N, N))
-
-    for m in range(N):
-        l, k, i, j = single_to_multi(m, K, I, J)
-        σ_c, σ_z, z = σ_c_states[k], σ_z_states[i], z_states[i, j]
-        for mp in range(N):
-            lp, kp, ip, jp = single_to_multi(m, K, I, J)
-            h_λp = h_λ_states[lp]
-            a = np.exp(θ * h_λp + (1 - γ) * (μ_c + z) + 0.5 * (1 - γ)**2 * σ_c**2)
-            H[m, mp] =  a * P_x[m, mp]
-
-    return H
 
 
 
