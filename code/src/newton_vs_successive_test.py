@@ -14,8 +14,10 @@
 
 # %run ../src/wc_ratio_multi_index.py
 
+from wc_ratio_multi_index import *
+
 s = 18
-ssy = SSY(L=s, K=s, I=s, J=s, build_single_index=False)
+ssy = SSY(L=s, K=s, I=s, J=s)
 
 # %%time
 w_star_multi_sa = wc_ratio_multi_index(ssy, algorithm="successive_approx")
