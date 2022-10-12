@@ -118,27 +118,3 @@ def wc_ratio(model,
     w_star, num_iter = solver(T_operator, w_init)
 
     return w_star
-
-if __name__ == '__main__':
-
-    m = SSY()
-    params = (m.L, m.K, m.I, m.J,
-              m.β, m.θ, m.γ, m.μ_c,
-              m.h_λ_states, m.h_λ_P,              
-              m.h_c_states, m.h_c_P,
-              m.h_z_states, m.h_z_P,
-              m.z_states,   m.z_Q,
-              m.σ_c_states, m.σ_z_states) 
-
-    def f(w):
-        return T(w, params)
-    w_init = jnp.ones((m.L, m.K, m.I, m.J)) * 800
-
-    def loss(x):
-        v = f(x) - x
-        return jnp.dot(v, v)
-    x_init = w_init
-
-    gd = jaxopt.GradientDescent(fun=loss, maxiter=1000, stepsize=0.0)
-    res = gd.run(init_params=x_init)
-    params, state = res
