@@ -14,7 +14,6 @@ from jax.config import config
 # Optionally tell JAX to use 64 bit floats
 config.update("jax_enable_x64", True)
 
-
 # == Operator == #
 
 def _T(w, shapes, constants, arrays):
@@ -50,17 +49,17 @@ def _T(w, shapes, constants, arrays):
 
     # Take product and sum along last four axes
     A = w**θ * B1 * B2 * B3 * Phλ * Phc * Phz * Pz
-    B = np.sum(A, axis=(4, 5, 6, 7))
+    Hwθ = np.sum(A, axis=(4, 5, 6, 7))
 
     # Define and return Tw
-    Tw = 1 + β * B**(1/θ)
+    Tw = 1 + β * Hwθ**(1/θ)
     return Tw
 
+# JIT compile the intermediate function _T
 _T = jax.jit(_T, static_argnums=(1, 2))
 
+# Define a version of T with a simplified interface."
 def T(w, params):
-    "A version of T with a simplified interface."
-
     (L, K, I, J,
     β, θ, γ, μ_c,
     h_λ_states, h_λ_P,              
@@ -79,13 +78,13 @@ def T(w, params):
     return _T(w, shapes, constants, arrays)
 
 
-def wc_ratio_multi_index(model, 
-                         algorithm="newton",
-                         init_val=800, 
-                         verbose=True):
+def wc_ratio(model, 
+             algorithm="newton",
+             init_val=800, 
+             verbose=True):
     """
-    Iterate to convergence on the Koopmans operator associated with the SSY
-    model and then return the wealth consumption ratio.
+    Iterate solve for the fixed point of the Koopmans operator 
+    associated with the model and return the wealth consumption ratio.
 
     - model is an instance of SSY or GCY
 
@@ -120,3 +119,26 @@ def wc_ratio_multi_index(model,
 
     return w_star
 
+if __name__ == '__main__':
+
+    m = SSY()
+    params = (m.L, m.K, m.I, m.J,
+              m.β, m.θ, m.γ, m.μ_c,
+              m.h_λ_states, m.h_λ_P,              
+              m.h_c_states, m.h_c_P,
+              m.h_z_states, m.h_z_P,
+              m.z_states,   m.z_Q,
+              m.σ_c_states, m.σ_z_states) 
+
+    def f(w):
+        return T(w, params)
+    w_init = jnp.ones((m.L, m.K, m.I, m.J)) * 800
+
+    def loss(x):
+        v = f(x) - x
+        return jnp.dot(v, v)
+    x_init = w_init
+
+    gd = jaxopt.GradientDescent(fun=loss, maxiter=1000, stepsize=0.0)
+    res = gd.run(init_params=x_init)
+    params, state = res

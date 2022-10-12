@@ -109,14 +109,14 @@ def _build_single_index_arrays(L, K, I, J,
             P_x[m, mp] = h_λ_P[l, lp] * h_c_P[k, kp] * h_z_P[i, ip] * z_Q[i, j, jp]
 
 
-def compute_H(ssy, z_states, P_x):
+def compute_H(ssy, P_x):
     " An interface to the fast function _compute_H. "
     H = _compute_H(ssy.unpack(),
                       ssy.L, ssy.K, ssy.I, ssy.J,
                       ssy.h_λ_states,
                       ssy.σ_c_states,
                       ssy.σ_z_states,
-                      z_states,
+                      ssy.z_states,
                       P_x)
     return H
 
@@ -162,15 +162,16 @@ def _compute_H(ssy_params,
 def T(w, params):
     "T via JAX operations."
     H, β, θ = params
-    Tw = 1 + β * (jnp.dot(H, (w**θ)))**(1/θ)
+    Tw = 1 + β * (H @ (w**θ))**(1/θ)
     return Tw
 
+# == Iteration == #
 
-def single_index_successive_approx(ssy, 
-                                   algorithm="newton",
-                                   init_val=800, 
-                                   single_index_output=False,   # output as w[m] or w[l, k, i, j]
-                                   verbose=True):
+def wc_ratio_single_index(ssy, 
+                          algorithm="newton",
+                          init_val=800, 
+                          single_index_output=False,   
+                          verbose=True):
     """
     Iterate to convergence on the Koopmans operator associated with the 
     SSY model and return the wealth consumption ratio.
@@ -182,7 +183,7 @@ def single_index_successive_approx(ssy,
 
     N = ssy.L * ssy.K * ssy.I * ssy.J
     x_states, P_x = discretize_single_index(ssy)
-    H = compute_H(ssy, x_states, P_x)
+    H = compute_H(ssy, P_x)
 
     H = jax.device_put(H)  # Put H on the device (GPU)
     params = H, β, θ 
@@ -208,17 +209,96 @@ def single_index_successive_approx(ssy,
     if single_index_output:
         w_out = w_star
     else:
-        L, K, I, J = ssy.L, ssy.K, ssy.I, ssy.J
-        M = L * K * I * J
-        w_out = np.empty((L, K, I, J))
-        for m in range(M):
-            l, k, i, j = single_to_multi(m, K, I, J)
-            w_out[l, k, i, j] = w_star[m]
+        w_out = jnp.reshape(w_star, (ssy.L, ssy.K, ssy.I, ssy.J))
+        # L, K, I, J = ssy.L, ssy.K, ssy.I, ssy.J
+        # M = L * K * I * J
+        # w_out = np.empty((L, K, I, J))
+        # for m in range(M):
+            # l, k, i, j = single_to_multi(m, K, I, J)
+            # w_out[l, k, i, j] = w_star[m]
 
     return w_out
 
 
+
+# == Specialized iteration == #
+
+@jax.jit
+def jacobian(w, params):
+    "Jacobian update via JAX operations."
+    H, β, θ = params
+    N, _ = H.shape
+    Hwθ = H @ w**θ
+    Fw = (Hwθ)**((1-θ)/θ)
+    Gw = w**(θ-1)
+    DF = jnp.diag(Fw.flatten())
+    DG = jnp.diag(Gw.flatten())
+    I = jnp.identity(N)
+    J = β * DF @ H @ DG - I
+    return J
+
+@jax.jit
+def Q(w, params):
+    "Jacobian update via JAX operations."
+    H, β, θ = params
+    Tw = T(w, params)
+    J = jacobian(w, params)
+    #b = jax.scipy.sparse.linalg.bicgstab(J, Tw - w)[0], 
+    b = jnp.linalg.solve(J, Tw - w)
+    return w - b
+
+
+def wc_ratio_single_index_specialized(ssy, 
+                                      init_val=800, 
+                                      single_index_output=False,   
+                                      verbose=True):
+    """
+    Iterate to convergence on the Koopmans operator associated with the 
+    SSY model and return the wealth consumption ratio.
+
+    """
+
+    # Unpack 
+    β, θ = ssy.β, ssy.θ
+
+    N = ssy.L * ssy.K * ssy.I * ssy.J
+    x_states, P_x = discretize_single_index(ssy)
+    H = compute_H(ssy, P_x)
+
+    H = jax.device_put(H)  # Put H on the device (GPU)
+    params = H, β, θ 
+
+    w_init = jnp.ones(N) * init_val
+
+    # Marginalize Q given the parameters
+    Q_operator = lambda x: Q(x, params)
+    # Call the solver
+    w_star, num_iter = fwd_solver(Q_operator, w_init)
+
+    # Return output in desired shape
+    if single_index_output:
+        w_out = w_star
+    else:
+        w_out = jnp.reshape(w_star, (ssy.L, ssy.K, ssy.I, ssy.J))
+        # L, K, I, J = ssy.L, ssy.K, ssy.I, ssy.J
+        # M = L * K * I * J
+        # w_out = np.empty((L, K, I, J))
+        # for m in range(M):
+            # l, k, i, j = single_to_multi(m, K, I, J)
+            # w_out[l, k, i, j] = w_star[m]
+
+    return w_out
+
 if __name__ == '__main__':
     ssy = SSY()
-    wc = single_index_successive_approx(ssy)
+    β, θ = ssy.β, ssy.θ
 
+    N = ssy.L * ssy.K * ssy.I * ssy.J
+    x_states, P_x = discretize_single_index(ssy)
+    H = compute_H(ssy, P_x)
+
+    H = jax.device_put(H)  # Put H on the device (GPU)
+    params = H, β, θ 
+
+    w_init = jnp.ones(N) * 800
+    out = Q(w_init, params)

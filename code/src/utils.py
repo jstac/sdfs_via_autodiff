@@ -118,6 +118,19 @@ def anderson_solver(f,
     return w_out, current_iter
 
 
+def fixed_point_via_gradient_decent(f, x_init):
+
+    def loss(x):
+        v = f(x) - x
+        return jnp.dot(v, v)
+
+    gd = jaxopt.GradientDescent(fun=loss, maxiter=1000, stepsize=0.0)
+    res = gd.run(init_params=x_init)
+    params, state = res
+
+
+# == List solvers for simple access == #
+
 # A dictionary of available solvers.
 solvers = dict((("newton", newton_solver),
                 ("anderson", anderson_solver),
