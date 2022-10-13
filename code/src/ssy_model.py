@@ -5,7 +5,7 @@ Schorfheide--Song--Yaron code.
 There are four states for the recursive utility / wealth-consumption ratio
 problem, namely
 
-    x = (h_λ, h_c, h_z, z)
+    x = (h_λ, h_c, h_z, z)  # indexed by l, k, i, j
 
 State dynamics are
 

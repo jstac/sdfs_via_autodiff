@@ -122,11 +122,16 @@ def fixed_point_via_gradient_decent(f, x_init):
 
     def loss(x):
         v = f(x) - x
-        return jnp.dot(v, v)
+        return jnp.dot(v.flatten(), v.flatten())
 
-    gd = jaxopt.GradientDescent(fun=loss, maxiter=1000, stepsize=0.0)
+    gd = jaxopt.GradientDescent(fun=loss, 
+                                maxiter=1000, 
+                                tol=0.0001,
+                                stepsize=0.0)
     res = gd.run(init_params=x_init)
-    params, state = res
+    solution, state = res
+
+    return solution
 
 
 # == List solvers for simple access == #
@@ -134,11 +139,11 @@ def fixed_point_via_gradient_decent(f, x_init):
 # A dictionary of available solvers.
 solvers = dict((("newton", newton_solver),
                 ("anderson", anderson_solver),
+                ("gd", fixed_point_via_gradient_decent),
                 ("successive_approx", fwd_solver)))
 
 
-
-# == Misc. utility function == #
+# == Misc. utility functions == #
 
 @njit
 def draw_from_cdf(F, U):
