@@ -143,39 +143,6 @@ solvers = dict((("newton", newton_solver),
                 ("successive_approx", fwd_solver)))
 
 
-# == Misc. utility functions == #
-
-@njit
-def draw_from_cdf(F, U):
-    " Draws from F when U is uniform on (0, 1) "
-    return np.searchsorted(F, U)
 
 
-def compute_spec_rad(Q):
-    """
-    Function to compute spectral radius of a matrix.
-
-    """
-    return np.max(np.abs(np.linalg.eigvals(Q)))
-
-
-# == Interpolation related utilities == #
-
-@jax.jit
-def jit_map_coordinates(vals, coords):
-    return jax.scipy.ndimage.map_coordinates(vals, coords, order=1,
-                                             mode='nearest')
-
-
-def vals_to_coords(grids, x_vals):
-    # jax.jit doesn't allow dynamic shapes
-    dim = 4
-
-    intervals = jnp.asarray([grid[1] - grid[0] for grid in grids])
-    low_bounds = jnp.asarray([grid[0] for grid in grids])
-
-    intervals = intervals.reshape(dim, 1)
-    low_bounds = low_bounds.reshape(dim, 1)
-
-    return (x_vals - low_bounds) / intervals
 

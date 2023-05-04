@@ -175,6 +175,7 @@
 \newcommand{\YY}{\mathbbm Y}
 \newcommand{\ZZ}{\mathbbm Z}
 \newcommand{\HH}{\mathbbm H}
+\newcommand{\KK}{\mathbbm K}
 \newcommand{\MM}{\mathbbm M}
 \newcommand{\PP}{\mathbbm P}
 \newcommand{\EE}{\mathbbm E}
@@ -235,19 +236,19 @@
 
 \begin{center}
     \LARGE 
-    Solving High-Dimensional Asset Pricing Models using Automatic
-    Differentiation and Accelerated Linear Algebra
+    Solving High-Dimensional Asset Pricing Models via Newton--Kantorovich
+    Iteration
     \blfootnote{To be added}
  
     \vspace{1em}
 
-    %\large
-    %Chase Coleman\textsuperscript{a}, Pablo Levi\textsuperscript{b}, John
-    %Stachurski\textsuperscript{c}, \\ Ole Wilms\textsuperscript{d} and Junnan Zhang\textsuperscript{e} \par \bigskip
+    \large
+    Chase Coleman\textsuperscript{a}, Pablo Levi\textsuperscript{b}, John
+    Stachurski\textsuperscript{c}, \\ Ole Wilms\textsuperscript{d} and Junnan Zhang\textsuperscript{e} \par \bigskip
 
-    %\small
-    %\textsuperscript{a} Research School of Economics, Australian National University \\ 
-    %\textsuperscript{b} Other affiliations to be added  \\ \bigskip
+    \small
+    \textsuperscript{a} Research School of Economics, Australian National University \\ 
+    \textsuperscript{b} Other affiliations to be added  \\ \bigskip
 
     \normalsize
     \today
@@ -274,39 +275,69 @@
 \section{Introduction}
 
 As with many sub-fields in economics and finance, researchers working on asset
-pricing face the need to handle a growing list of state variables when trying
-to match existing theory to the data.  For example, while the heavily cited
-paper of \cite{bansal2004risks} used just two state variables to model the
-wealth-consumption ratio (a stationary expected growth rate process and a
-stochastic volatility term), subsequent work has added many features to the
-consumption side of this model.  For example,
-\cite{schorfheide2018identifying} added preference shocks and an additional
-stochastic volatility term, leading to four state variables.
-\cite{gomez2021important} added two more state variables to handle
-expectations of inflation.  
+pricing face the need to handle a growing list of state variables when trying to
+match existing theory to the data.  For example, while the seminal paper of
+\cite{bansal2004risks} used just two state variables to model the
+wealth-consumption ratio, subsequent work has added many features to the
+consumption side of this model.  For example, \cite{schorfheide2018identifying}
+added preference shocks and an additional stochastic volatility term, leading to
+four state variables. \cite{gomez2021important} added two more state variables
+to handle expectations of inflation.  
 
-While six state variables is a tiny amount in some fields (e.g., linear
-programming problems), quantitative analysis for asset pricing faces several
-related problems.  First, models like the ones listed above are highly
-nonlinear and, moreover, these nonlinearities matter for endogenous quantities
-of interest, such as the risk premium (see, e.g., \cite{pohl2018higher}).
-Second, discount factors are very close to unity (e.g., 0.998 in
-\cite{bansal2004risks}), implying slow convergence of global iterative
-solution methods.  Third, the consumption problem is embedded in a larger
-model with still more state variables.  Fourth, the model needs to be solved
-at many different parameterizations in order to fit the data.
+To date, the standard method for handling these kinds of models has been
+log-linearization.  However, the underlying models are highly nonlinear and,
+moreover, it has been shown that these nonlinearities matter for endogenous
+quantities of interest, such as the risk premium (see, e.g.,
+\cite{pohl2018higher}).  Hence researchers are seeking better global solution
+methods that capture the full impact of underlying nonlinearities.
+
+At the same time, for a model of this type, even a moderate number of state
+variables leads to challenging computational problems.  One reason is the
+nonlinearities discussed above.  Another is that, in standard calibrations,
+discount factors are very close to unity (e.g., 0.998 in
+\cite{bansal2004risks}), implying slow convergence of some solution methods.
+Moreover, the consumption problem is typically embedded in a larger model with
+still more state variables, so fast and accurate solutions are essential.  
 
 In this paper we show how to rapidly approximate global solutions to the kinds
-of asset pricing models listed above using GPU computing based on Google JAX.
+of asset pricing models listed above using Newton--Kantorovich iteration backed
+by three features: automatic differentiation, just-in-time compilation and 
+execution on hardware accelerators such as GPUs. 
 
-Short history of JAX, discussion of its capabilities.
+To implement these feastures we use the software library JAX. 
 
-Some explanation of what we achieve.
+\textcolor{DarkOrchid}{Short history of JAX, discussion of its capabilities.}
 
-Review of related literature.
+\textcolor{DarkOrchid}{Some explanation of what we achieve. Review of related
+literature.}
+
+\textcolor{DarkOrchid}{Some benefits of our method. 
+    \begin{itemize}
+        \item We can potentially differentiate the fixed point with respect to the
+            parameters. These gradients help us how the SDF and WC ratio respond
+            to shifts in underlying parameters.  They can also provide Jacobians
+            for gradient decent.
+        \item Autodiff means it's possible to plug other fixed point operators, associated with
+            other specifications of recursive utility, directly into the code.
+            There's no need to compute gradients in each case.
+        \item By switching from successive approximation to Newton's method, using
+            autodifferentiation to compute the Jacobian, we change the problem
+            from many small iterations to a small number of computationally
+            expensive ones, which offer better opportunities for parallelization. 
+        \item Autodifferentiation is important here, as compared to numerical
+            derivatives, since convergence is fragile for this operator (very slow
+            rate of convergence).
+        \item JAX allows us to invert the Jacobian without actually instantiating
+            the full Jacobian matrix.   This is a key feature for successfully
+            solving high dimensional problems. 
+    \end{itemize}
+}
 
 
 \section{Asset Pricing Background}
+
+In this section we introduce the model and then progress to stating the
+functional equation for the wealth-consumption ration.
 
 In discrete-time no-arbitrage environments, the equilibrium price process
 $\{P_t\}_{t \geq 0}$ associated with a cash flow $\{G_t\}_{t \geq 1}$ obeys
@@ -321,88 +352,11 @@ the fundamental recursion
 %
 where $\{ M_t\}$ is the sequence of single period stochastic discount factors
 (see, for example,~\cite{kreps1981arbitrage}, \cite{hansen_richard:1987}
-or~\cite{duffie2001dynamic}).\footnote{Equation~\eqref{eq:pd} assumes an
-    ex-dividend contract, so that purchasing a claim to the asset at time $t$
-entitles the buyer to the cash flow starting from date $t+1$.}  Most of the
-well-known ``puzzles'' in asset pricing theory relate to the difficulty of
-matching \eqref{eq:pd} to the data across a diverse range of asset classes.
-Attempts to resolve these puzzles typically involve relatively sophisticated
-models for the stochastic discount factor (SDF) process $\{ M_t\}$.
-
-Most modern asset pricing models use 
-
-\textcolor{blue}{For now a place to put some notes about ideas.}
-
-Background on Newton's algorithm in $\RR^N$.  Let $f$ be a smooth map from
-$\RR^N$ to itself.  We want to find the $x \in \RR^N$ that solves $f(x)=x$.
-Ordinary successive approximation uses
-%
-\begin{equation}
-    x_{k+1} = f(x_k)
-\end{equation}
-%
-Newton's method first sets $g(x) = f(x) -x$, so that we are seeking a root $x$
-satisfying $g(x)=0$, and then iterates on
-%
-\begin{equation}
-    x_{k+1} = g(x_k) + J(x_k)^{-1} g(x_k)
-\end{equation}
-%
-where $J(x)$ is the Jacobian of $g$ at $x$.
-
-In the EZ fixed point problem, it's not too hard to compute an expression for
-the Jacobian of the fixed point operator, so why use autodiff?  This is a fair
-question.  Here are some thoughts?
-%
-\begin{itemize}
-    \item We can also differentiate the fixed point with respect to the
-        parameters. These gradients help us how the SDF and WC ratio respond
-        to shifts in underlying parameters.  They can also provide Jacobians
-        for gradient decent.
-    \item It's possible to plug other fixed point operators, associated with
-        other specifications of recursive utility, directly into the code.
-        There's no need to compute gradients in each case.
-    \item We might be able to use second order Newton methods, since autodiff
-        can provide derivatives of any order.
-\end{itemize}
-
-General points:
-%
-\begin{itemize}
-    \item By switching from successive approximation to Newton's method, using
-        autodifferentiation to compute the Jacobian, we change the problem
-        from many small iterations to a small number of computationally
-        expensive ones, which offer better opportunities for parallelization. 
-    \item Autodifferentiation is important here, as compared to numerical
-        derivatives, since convergence is fragile for this operator (very slow
-        rate of convergence).
-\end{itemize}
-
-
-\section{A Long Run Risk Model}
-
-Roadmap to be added.
-
-Consumption growth and the growth rate of the preference shock are given by
-the generic formulas
-%
-\begin{equation}
-    \label{eq:kappa}
-    g_{c, t+1}
-    = g_c(X_t, X_{t+1}, \xi_{t+1})
-    \quad \text{and} \quad
-    g_{\lambda, t+1}
-    = g_\lambda(X_t, X_{t+1}, \xi_{t+1}),
-\end{equation}
-%
-where $\{ X_t \}_{t \geq 0}$ is a discrete time Markov process on $\XX \subset \RR^d$, $\{
-\xi_t \}_{t \geq 1}$ is an {\sc iid} process supported on $\YY \subset \RR^k$,
-and $g_i \colon \XX \times \XX \times \YY \to \RR$ is continuous for
-each $i \in \{c, \lambda\}$.  The processes $\{X_t\}$  and $\{\xi_t\}$ are
-assumed to be independent.
-
-
-
+or~\cite{duffie2001dynamic}).  Most of the well-known ``puzzles'' in asset
+pricing theory relate to the difficulty of matching \eqref{eq:pd} to the data
+across a diverse range of asset classes. Attempts to resolve these puzzles
+typically involve relatively sophisticated models for the stochastic discount
+factor (SDF) process $\{ M_t\}$.
 
 In the model, the wealth-consumption ratio obeys
 %
@@ -413,55 +367,94 @@ In the model, the wealth-consumption ratio obeys
     \left( \frac{\lambda_{t+1}}{\lambda_t} \right)^\theta
         \left( \frac{C_{t+1}}{C_t} \right)^{1-\gamma}
         \left( \frac{w(X_{t+1})}{w(X_t)-1} \right)^\theta
-    \right] = 1
+    \right] = 1,
 \end{equation*}
 %
+where $\{ X_t \}_{t \geq 0}$ is a stationary time-homogeneous Markov process on
+$\XX \subset \RR^d$.
 Rearranging the previous expression gives
 %
-\begin{equation*}
+\begin{align*}
     (w(X_t)-1)^\theta
-    = \beta^{\theta}
+    & = \beta^{\theta}
     \EE_t
     \left[
     \left( \frac{\lambda_{t+1}}{\lambda_t} \right)^\theta
         \left( \frac{C_{t+1}}{C_t} \right)^{1-\gamma}
         w(X_{t+1})^\theta
-    \right].
-\end{equation*}
+    \right]
+    \\
+    & = \beta^{\theta}
+    \EE_t
+    \left[
+        \exp
+        \left\{ 
+            \theta g_{\lambda, t+1} + (1-\gamma) g_{c, t+1}
+        \right\}
+        w(X_{t+1})^\theta
+    \right],
+\end{align*}
+%
+where
+%
+\begin{equation}
+    \label{eq:kappa}
+    g_{c, t+1}
+    := \ln \frac{C_{t+1}}{C_t}
+    \quad \text{and} \quad
+    g_{\lambda, t+1}
+    := \ln \frac{\lambda_{t+1}}{\lambda_t}.
+\end{equation}
 %
 
 Let $\HH$ be the linear operator defined by
 %
 \begin{equation}\label{eq:defk}
-    (\HH g)(x) = \EE_x 
-        \, g(X_{t+1})  \,
+    (\HH f)(x) = \EE_x 
+        \, f(X_{t+1})  \,
         \exp
-        \left[ 
-            \theta g_\lambda(X_t, X_{t+1}, \xi_{t+1}) + (1-\gamma) g_c(X_t, X_{t+1}, \xi_{t+1}))
-        \right]
+        \left\{ 
+            \theta g_{\lambda, t+1} + (1-\gamma) g_{c, t+1}
+        \right\}
 \end{equation}
 %
-at each $x \in \XX$,  where $\EE_x$ conditions on $X_t = x$.
-Conditioning on $X_t = x$, writing pointwise on $\XX$ and using the definition
-of $\HH$ yields $w = 1 + \beta \left( \HH w^\theta \right)^{1/\theta}$.  A
-function $w$ solves this equation if and only if $w$ is a fixed point
+at each $x \in \XX$,  where $\EE_x$ conditions on $X_t = x$.  With this notation
+we can now write the equation for the wealth-consumption ratio as
+%
+\begin{equation}
+    (w(x)-1)^\theta
+    = \beta^{\theta}
+    \left[
+        (\HH w)(x)^\theta
+    \right].
+    \label{eq:wcnt}
+\end{equation}
+%
+Rearranging once more gives the functional equation
+%
+\begin{equation}
+    w = 1 + \beta ( \HH w^\theta )^{1/\theta}.
+    \label{eq:fe}
+\end{equation}
+%
+A function $w$ solves this equation if and only if $w$ is a fixed point
 of the operator $\TT$ defined by 
 %
 \begin{equation}\label{eq:wcop}
-    (\TT w) = 1 + \beta \,  (\HH w^\theta)^{1/\theta}.
+    \TT w = 1 + \beta \,  (\HH w^\theta)^{1/\theta}.
 \end{equation}
 %
 
 
 
-\subsection{The SSY Case}
+\subsection{Example: The SSY Case}
 
 In the long run risk model of \cite{schorfheide2018identifying}, the state
 process takes the form 
 %
-\begin{equation*}
+\begin{equation}\label{eq:state}
     X_t := (h_{\lambda, t}, h_{c, t}, h_{z, t}, z_t)  
-\end{equation*}
+\end{equation}
 %
 where, for $i \in \{z, c, \lambda\}$,
 %
@@ -479,29 +472,140 @@ where, for $i \in \{z, c, \lambda\}$,
 %
 
 
-Consumption growth is given by 
+The consumption and preference shock growth rates are
 %
 \begin{equation}\label{eq:ssygc}
     g_{c, t+1}
-    = \ln \frac{C_{t+1}}{C_t} 
-    = \mu_c + z_t + \sigma_{c, t} \, \xi_{c, t+1} .
+    = \mu_c + z_t + \sigma_{c, t} \, \xi_{c, t+1} 
+    \quad \text{and} \quad
+    g_{\lambda, t+1} = h_{\lambda, t+1}.
 \end{equation}
 %
-The preference shock $\lambda_t$ grows as
+The innovations are all independent and standard normal.  
+
+In this setting, the operator $\HH$ takes the form
 %
 \begin{equation*}
-    g_{\lambda, t+1}
-    = \ln \frac{\lambda_{t+1}}{\lambda_t} 
-    = h_{\lambda, t+1}.
+    (\HH f)(x)
+    = \EE_x
+        \, f(X_{t+1}) 
+        \exp \left\{
+            \theta h_{\lambda, t+1}
+            + (1-\gamma)(\mu_c + z_t + \sigma_{c, t} \xi_{c, t+1})
+        \right\}.
 \end{equation*}
 %
-The innovations 
+We can reduce dimensionality in the conditional expectation by integrating out
+the independent innovation $\xi_{c, t+1}$, which leads to 
+%
+\begin{equation}
+    (\HH f)(x)
+    = \exp \left\{
+            (1-\gamma)(\mu_c + z)
+            + \frac{1}{2} (1-\gamma)^2 \sigma_c^2 
+        \right\}
+        \EE_x \, f(X_{t+1}) 
+        \exp \left\{
+            \theta h_{\lambda, t+1}
+        \right\},
+\end{equation}
+%
+where the conditioning is on $X_t = x$ as given in \eqref{eq:state}.
+We can write the operator more explicitly as
+%
+\begin{equation}
+    (\HH f)(x)
+    = \kappa(z, h_c)
+        \EE_x \, f(X_{t+1}) 
+        \exp \left\{
+            \theta h_{\lambda, t+1}
+        \right\},
+\end{equation}
+%
+where
+%
+\begin{equation}\label{eq:kap}
+    \kappa(z, h_c) 
+     := \exp \left\{
+            (1-\gamma)(\mu_c + z)
+            + \frac{1}{2} (1-\gamma)^2 
+            [\phi_c \, \bar{\sigma} \, \exp(h_c)]^2 
+        \right\}.
+\end{equation}
+%
+The baseline parameter values can be found in the code repository.
+
+
+
+\subsection{Example: The GCY Case}
+
+In this section, we analyze the stability properties of the model of
+\cite{GomezYaron2020}. The authors add inflation dynamics to a long-run risk
+model similar to the one of \cite{schorfheide2018identifying}. In particular,
+they assume that the expected inflation rate $z_{\pi,t}$ affects the mean growth
+rate of consumption:
+%
+\begin{equation}\label{eq:gcycg}
+	g_{c, t+1} 
+	= \ln \left( \frac{C_{t+1}}{C_t} \right)    
+	= \mu_c + z_t + \sigma_{c, t} \, \xi_{c, t+1},
+\end{equation}
+%
+where
+%
+\begin{align*}
+	z_{t+1} 
+	&= \rho \, z_t + \rho_{\pi} \, z_{\pi,t}+ 
+	\sigma_{z, t} \, \eta_{t+1}\\
+	z_{\pi,t+1} 
+	&= \rho_{\pi \pi} \, z_{\pi,t} + \sigma_{z \pi, t} \, \eta_{\pi,t+1}
+\end{align*}
+%
+and
 %
 \begin{equation*}
-    \xi_{c, t}, \;\;  \epsilon_t, \text{ and } (\eta_{i, t})_{i \in \{z, c, \lambda\}}
+	\sigma_{i,t} 
+	= \phi_i \, \bar{\sigma} \, \exp(h_{i, t})
+	\quad \text{where} \quad
+	h_{i, t+1}
+	= \rho_i \, h_{i,t} + s_i \, \eta_{i, t+1}
+	\quad \text{for } i \in \{z, c, z\pi \}.
 \end{equation*}
 %
-are all independent and standard normal.  
+Note that also the expected inflation rate $z_{\pi,t}$ has stochastic volatility
+$\sigma_{z\pi,t}$. As in the model of \cite{schorfheide2018identifying}, the
+process $\{\lambda_t\}$ follows \eqref{eq:ssygc} and all shocks are
+\textsc{iid} and standard normal. Hence, the state vector $x$ contains 6 states
+and is given by
+%
+\begin{equation*}
+    x = (z, z_\pi, h_z, h_c, h_{z\pi}, h_\lambda) \in \XX := \RR^6. 
+\end{equation*}
+%
+We can apply the same conditioning as in the model of
+\cite{schorfheide2018identifying} and we need to compute $\sS_c$ numerically
+again. The baseline parameter values can be found in the code repository.
+
+
+
+\section{Solution Method}
+
+Background on Newton's algorithm in $\RR^N$.  Let $f$ be a smooth map from
+$\RR^N$ to itself.  We want to find the $x \in \RR^N$ that solves $f(x)=x$.
+Ordinary successive approximation uses
+%
+\begin{equation}
+    x_{k+1} = f(x_k)
+\end{equation}
+%
+Newton's method first sets $g(x) = f(x) -x$, so that we are seeking a root $x$
+satisfying $g(x)=0$, and then iterates on
+%
+\begin{equation}
+    x_{k+1} = g(x_k) + J(x_k)^{-1} g(x_k)
+\end{equation}
+%
+where $J(x)$ is the Jacobian of $g$ at $x$.
 
 
 \subsection{Discretization}

@@ -3,17 +3,22 @@
 Single-index routines for computing the wealth consumption ratio of the SSY
 model.
 
-This code cannot be run when the model is high-dimensional.  It's purpose is
-mainly for cross-checking solutions produced by the multi-index code.
+This code cannot be run when the model is high-dimensional.  It's only purpose
+is for cross-checking solutions produced by the multi-index code!
 
 """
 
-import numpy as np
-from ssy_model import *
-from utils import *
+
 import jax
 import jax.numpy as jnp
 from jax.config import config
+
+# Import local modules
+import sys
+sys.path.append('..')
+from ssy_model import *
+from utils import *
+
 
 # Tell JAX to use 64 bit floats
 config.update("jax_enable_x64", True)
@@ -24,15 +29,15 @@ config.update("jax_enable_x64", True)
 
 @njit
 def split_index(i, M):
-    """
-    A utility function for the multi-index.
-    """
     div = i // M
     rem = i % M
     return (div, rem)
 
 @njit
 def single_to_multi(m, K, I, J):
+    """
+    A utility function for the multi-index.
+    """
     l, rem = split_index(m, K * I * J)
     k, rem = split_index(rem, I * J)
     i, j = split_index(rem, J)
@@ -73,8 +78,8 @@ def discretize_single_index(ssy):
     N = L * K * I * J
 
     # Allocate arrays
-    P_x = np.zeros((N, N))
-    x_states = np.zeros((4, N))
+    P_x = jnp.zeros((N, N))
+    x_states = jnp.zeros((4, N))
 
     # Populate arrays
     state_arrays = (ssy.h_λ_states, ssy.h_c_states,
@@ -141,7 +146,7 @@ def _compute_H(ssy_params,
         s_z, s_c, s_λ) = ssy_params
     N = L * K * I * J
     θ = (1 - γ) / (1 - 1/ψ)
-    H = np.empty((N, N))
+    H = jnp.empty((N, N))
 
     for m in range(N):
         l, k, i, j = single_to_multi(m, K, I, J)
@@ -149,7 +154,7 @@ def _compute_H(ssy_params,
         for mp in range(N):
             lp, kp, ip, jp = single_to_multi(m, K, I, J)
             h_λp = h_λ_states[lp]
-            a = np.exp(θ * h_λp + (1 - γ) * (μ_c + z) + 0.5 * (1 - γ)**2 * σ_c**2)
+            a = jnp.exp(θ * h_λp + (1 - γ) * (μ_c + z) + 0.5 * (1 - γ)**2 * σ_c**2)
             H[m, mp] =  a * P_x[m, mp]
 
     return H
@@ -210,12 +215,6 @@ def wc_ratio_single_index(ssy,
         w_out = w_star
     else:
         w_out = jnp.reshape(w_star, (ssy.L, ssy.K, ssy.I, ssy.J))
-        # L, K, I, J = ssy.L, ssy.K, ssy.I, ssy.J
-        # M = L * K * I * J
-        # w_out = np.empty((L, K, I, J))
-        # for m in range(M):
-            # l, k, i, j = single_to_multi(m, K, I, J)
-            # w_out[l, k, i, j] = w_star[m]
 
     return w_out
 
@@ -280,12 +279,6 @@ def wc_ratio_single_index_specialized(ssy,
         w_out = w_star
     else:
         w_out = jnp.reshape(w_star, (ssy.L, ssy.K, ssy.I, ssy.J))
-        # L, K, I, J = ssy.L, ssy.K, ssy.I, ssy.J
-        # M = L * K * I * J
-        # w_out = np.empty((L, K, I, J))
-        # for m in range(M):
-            # l, k, i, j = single_to_multi(m, K, I, J)
-            # w_out[l, k, i, j] = w_star[m]
 
     return w_out
 

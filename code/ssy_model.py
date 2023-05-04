@@ -41,26 +41,27 @@ For ϕ_c and ϕ_d, see the sentence after eq (9).
 
 """
 
+import jax
+import jax.numpy as jnp
+from jax.config import config
 
 import numpy as np
 from scipy.optimize import brentq
 from quantecon import MarkovChain, rouwenhorst
+
 from numba import njit, prange, float32, cuda
 from numpy.random import rand, randn
 
 
 class SSY:
     """
-    Stores the SSY model parameters, along with data for two discretized
-    versions of the SSY model:
-
-        - multi-index model with indices l, k, i, j
-        - single index model with index n
+    Stores the SSY model parameters, along with data for a discretized
+    (multi-index) version with indices (l, k, i, j).
 
     """
 
     def __init__(self,
-                 β=0.999,   # = δ in SSY
+                 β=0.999,                                # = δ in SSY
                  γ=8.89,
                  ψ=1.97,
                  ρ=0.987,
@@ -73,35 +74,22 @@ class SSY:
                  μ_c=0.0016,
                  φ_z=0.215*0.0035*np.sqrt(1-0.987**2),   # *σ_bar*sqrt(1-ρ^2)
                  φ_c=1.00*0.0035,                        # *σ_bar
-                 L=4, K=4, I=4, J=4):
+                 ):
 
-        # Unpack
+        # Store parameters and derived parameters
         self.β, self.γ, self.ψ = β, γ, ψ
         self.μ_c,self.ϕ_z, self.ϕ_c = μ_c, ϕ_z, ϕ_c
         self.ρ, self.ρ_z, self.ρ_c, self.ρ_λ = ρ, ρ_z, ρ_c, ρ_λ
         self.s_z, self.s_c, self.s_λ = s_z, s_c, s_λ
         self.θ = (1 - γ) / (1 - 1/ψ)
 
-        # Set up states and transitions
-        self.L, self.K, self.I, self.J = L, K, I, J
-        (self.h_λ_states, self.h_λ_P,
-         self.h_c_states, self.h_c_P,
-         self.h_z_states, self.h_z_P,
-         self.z_states,   self.z_Q) = self.discretize_multi_index(L, K, I, J)
+        # Pack params into an array
+        self.params = β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ
 
-        # For convenience, store the sigma states as well
-        self.σ_c_states = self.ϕ_c * np.exp(self.h_c_states)
-        self.σ_z_states = self.ϕ_z * np.exp(self.h_z_states)
-
-    def unpack(self):
-        return (self.β, self.γ, self.ψ,
-                self.μ_c, self.ρ, self.ϕ_z, self.ϕ_c,
-                self.ρ_z, self.ρ_c, self.ρ_λ,
-                self.s_z, self.s_c, self.s_λ)
-
-    def discretize_multi_index(self, L, K, I, J):
+    def discretize_multi_index(self, L=4, K=4, I=4, J=4):
         """
-        Discretize the SSY model using a multi-index.
+        Discretizes the SSY model using a multi-index and returns a discrete
+        representation of the model.
 
         The discretization uses iterations of the Rouwenhorst method.  The
         indices are
@@ -114,11 +102,12 @@ class SSY:
             z_Q[i, j, jp] is trans prob from j to jp when σ_z index = i
 
         """
-        (β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ) = self.unpack()
 
-        h_λ_mc = rouwenhorst(L, 0, s_λ, ρ_λ)
-        h_c_mc = rouwenhorst(K, 0, s_c, ρ_c)
-        h_z_mc = rouwenhorst(I, 0, s_z, ρ_z)
+        β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ = self.params
+
+        h_λ_mc = rouwenhorst(L, ρ_λ, s_λ, 0)
+        h_c_mc = rouwenhorst(K, ρ_c, s_c, 0)
+        h_z_mc = rouwenhorst(I, ρ_z, s_z, 0)
 
         # Build states
         h_λ_states = h_λ_mc.state_values
@@ -135,52 +124,76 @@ class SSY:
             for j in range(J):
                 z_states[i, j] = mc_z.state_values[j]
                 z_Q[i, j, :] = mc_z.P[j, :]
+                 
+        # For convenience, store the sigma states as well
+        σ_c_states = ϕ_c * jnp.exp(h_c_states)
+        σ_z_states = ϕ_z * jnp.exp(h_z_states)
 
-        return (h_λ_states,  h_λ_mc.P,
-                h_c_states,  h_c_mc.P,
-                h_z_states,  h_z_mc.P,
-                z_states,    z_Q)
+        arrays = (h_λ_states,  h_λ_mc.P,
+                  h_c_states,  h_c_mc.P,
+                  h_z_states,  h_z_mc.P,
+                  z_states,    z_Q,
+                  σ_c_states, σ_z_states)
+
+        shapes = L, K, I, J
+
+        return shapes, self.params, arrays
+
+    def discrete_T_operator_factory(self, L, K, I, J):
+
+        shapes, params, arrays = self.discretize_multi_index(L, K, I, J)
+         
+        def _T(w):
+            """
+            Implement a discrete version of the operator T for the SSY model via
+            JAX operations.  In the call signature, we pass array sizes to aid
+            the JIT compiler.  In particular, changing sizes triggers a
+            recompile. 
+            """
+
+            # Unpack
+            L, K, I, J = shapes
+            (β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ) = params
+            (h_λ_states, h_λ_P,              
+             h_c_states, h_c_P,
+             h_z_states, h_z_P,
+             z_states,   z_Q,
+             σ_c_states, σ_z_states) = arrays
+
+            θ = (1 - γ) / (1 - 1/ψ)
+
+            # Create intermediate arrays
+            B1 = jnp.exp(θ * h_λ_states)
+            B1 = jnp.reshape(B1, (1, 1, 1, 1, L, 1, 1, 1))
+            B2 = jnp.exp(0.5*((1-γ)*σ_c_states)**2)
+            B2 = jnp.reshape(B2, (1, K, 1, 1, 1, 1, 1, 1))
+            B3 = jnp.exp((1-γ)*(μ_c+z_states))
+            B3 = jnp.reshape(B3, (1, 1, I, J, 1, 1, 1, 1))
+
+            # Reshape existing matrices prior to reduction
+            Phλ = jnp.reshape(h_λ_P, (L, 1, 1, 1, L, 1, 1, 1))
+            Phc = jnp.reshape(h_c_P, (1, K, 1, 1, 1, K, 1, 1))
+            Phz = jnp.reshape(h_z_P, (1, 1, I, 1, 1, 1, I, 1))
+            Pz = jnp.reshape(z_Q, (1, 1, I, J, 1, 1, 1, J))
+            w = jnp.reshape(w, (1, 1, 1, 1, L, K, I, J))
+
+            # Take product and sum along last four axes
+            A = w**θ * B1 * B2 * B3 * Phλ * Phc * Phz * Pz
+            Hwθ = jnp.sum(A, axis=(4, 5, 6, 7))
+
+            # Define and return Tw
+            Tw = 1 + β * Hwθ**(1/θ)
+            return Tw
+
+        # JIT compile the intermediate function _T
+        # T = jax.jit(_T, static_argnums=(1, ))
+        return jax.jit(_T)
 
 
 
-## == Other utilities == ##
-
-def lininterp_funcvals(ssy, function_vals):
-    """
-    Builds and returns a jitted callable that implements an approximation of
-    the function determined by function_vals via linear interpolation over the
-    grid.
-
-        expected grid is (h_λ_states, h_c_states, h_z_states, z_states)
 
 
-    """
-
-    h_λ_states = ssy.h_λ_states
-    h_c_states = ssy.h_c_states
-    h_z_states = ssy.h_z_states
-    z_states = ssy.z_states
-
-    @njit
-    def interpolated_function(x):
-        h_λ, h_c, h_z, z = x
-        i = np.searchsorted(h_z_states, h_z)
-        # Don't go out of bounds
-        if i == len(h_z_states):
-            i = i - 1
-
-        return lininterp_4d(h_λ_states,
-                            h_c_states,
-                            h_z_states,
-                            z_states[i, :],
-                            function_vals,
-                            x)
-
-    return interpolated_function
-
-
-
-## ==== Log linear approximation of the W/C ratio === ##
+## ==== Log linear approximation of the SSY W/C ratio === ##
 
 def wc_loglinear_factory(ssy):
     """
@@ -194,7 +207,7 @@ def wc_loglinear_factory(ssy):
     (β, γ, ψ,
         μ_c, ρ, ϕ_z, ϕ_c,
         ρ_z, ρ_c, ρ_λ,
-        s_z, s_c, s_λ) = ssy.unpack()
+        s_z, s_c, s_λ) = ssy.params
     θ = ssy.θ
 
     s_wc = 2*(φ_c)**2*s_c;
@@ -236,11 +249,7 @@ def wc_loglinear_factory(ssy):
     Ah_c = fAc(qbar)
     A0 = fA0(qbar)
 
-    # Record the constants within the instance
-    ssy.Az, ssy.Ah_λ, ssy.Ah_z, ssy.Ah_c, ssy.A0 = \
-        Az, Ah_λ, Ah_z, Ah_c, A0
-
-    # Now build the jitted function
+    # Now build a jitted function 
     @njit
     def wc_loglinear(x):
         """
