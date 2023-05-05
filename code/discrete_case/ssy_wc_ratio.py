@@ -12,8 +12,7 @@ from jax.config import config
 import sys
 sys.path.append('..')
 from ssy_model import *
-from utils import solver
-
+from solvers import solver
 
 # Optionally tell JAX to use 64 bit floats
 config.update("jax_enable_x64", True)
@@ -31,6 +30,8 @@ def discretize_ssy_multi_index(ssy, L=4, K=4, I=4, J=4):
     Discretizes the SSY model using a multi-index and returns a discrete
     representation of the model.
 
+    This discrete representation is then passed to the Koopmans operator.
+
     The discretization uses iterations of the Rouwenhorst method.  The
     indices are
 
@@ -43,8 +44,12 @@ def discretize_ssy_multi_index(ssy, L=4, K=4, I=4, J=4):
 
     """
 
-    β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ = ssy.params
+    # Organize and unpack
+    params = ssy.params
+    shapes = L, K, I, J
+    β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ = params
 
+    # Discretize
     h_λ_mc = rouwenhorst(L, ρ_λ, s_λ, 0)
     h_c_mc = rouwenhorst(K, ρ_c, s_c, 0)
     h_z_mc = rouwenhorst(I, ρ_z, s_z, 0)
@@ -69,67 +74,59 @@ def discretize_ssy_multi_index(ssy, L=4, K=4, I=4, J=4):
     σ_c_states = ϕ_c * jnp.exp(h_c_states)
     σ_z_states = ϕ_z * jnp.exp(h_z_states)
 
+    # Set up all arrays and put them on the device
     arrays = (h_λ_states,  h_λ_mc.P,
               h_c_states,  h_c_mc.P,
               h_z_states,  h_z_mc.P,
               z_states,    z_Q,
               σ_c_states, σ_z_states)
 
-    shapes = L, K, I, J
-
-    return shapes, ssy.params, arrays
+    return shapes, params, arrays
 
 
 
-def multi_index_ssy_T_factory(ssy, L, K, I, J):
+def multi_index_ssy_T(w, shapes, params, arrays):
+    """
+    Implement a discrete version of the operator T for the SSY model via
+    JAX operations.  
+    """
 
-    shapes, params, arrays = ssy.discretize_ssy_multi_index(L, K, I, J)
-     
-    def _T(w):
-        """
-        Implement a discrete version of the operator T for the SSY model via
-        JAX operations.  In the call signature, we pass array sizes to aid
-        the JIT compiler.  In particular, changing sizes triggers a
-        recompile. 
-        """
+    # Unpack
+    L, K, I, J = shapes
+    (β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ) = params
+    (h_λ_states, h_λ_P,              
+     h_c_states, h_c_P,
+     h_z_states, h_z_P,
+     z_states,   z_Q,
+     σ_c_states, σ_z_states) = arrays
 
-        # Unpack
-        L, K, I, J = shapes
-        (β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ) = params
-        (h_λ_states, h_λ_P,              
-         h_c_states, h_c_P,
-         h_z_states, h_z_P,
-         z_states,   z_Q,
-         σ_c_states, σ_z_states) = arrays
+    θ = (1 - γ) / (1 - 1/ψ)
 
-        θ = (1 - γ) / (1 - 1/ψ)
+    # Create intermediate arrays
+    B1 = jnp.exp(θ * h_λ_states)
+    B1 = jnp.reshape(B1, (1, 1, 1, 1, L, 1, 1, 1))
+    B2 = jnp.exp(0.5*((1-γ)*σ_c_states)**2)
+    B2 = jnp.reshape(B2, (1, K, 1, 1, 1, 1, 1, 1))
+    B3 = jnp.exp((1-γ)*(μ_c+z_states))
+    B3 = jnp.reshape(B3, (1, 1, I, J, 1, 1, 1, 1))
 
-        # Create intermediate arrays
-        B1 = jnp.exp(θ * h_λ_states)
-        B1 = jnp.reshape(B1, (1, 1, 1, 1, L, 1, 1, 1))
-        B2 = jnp.exp(0.5*((1-γ)*σ_c_states)**2)
-        B2 = jnp.reshape(B2, (1, K, 1, 1, 1, 1, 1, 1))
-        B3 = jnp.exp((1-γ)*(μ_c+z_states))
-        B3 = jnp.reshape(B3, (1, 1, I, J, 1, 1, 1, 1))
+    # Reshape existing matrices prior to reduction
+    Phλ = jnp.reshape(h_λ_P, (L, 1, 1, 1, L, 1, 1, 1))
+    Phc = jnp.reshape(h_c_P, (1, K, 1, 1, 1, K, 1, 1))
+    Phz = jnp.reshape(h_z_P, (1, 1, I, 1, 1, 1, I, 1))
+    Pz = jnp.reshape(z_Q, (1, 1, I, J, 1, 1, 1, J))
+    w = jnp.reshape(w, (1, 1, 1, 1, L, K, I, J))
 
-        # Reshape existing matrices prior to reduction
-        Phλ = jnp.reshape(h_λ_P, (L, 1, 1, 1, L, 1, 1, 1))
-        Phc = jnp.reshape(h_c_P, (1, K, 1, 1, 1, K, 1, 1))
-        Phz = jnp.reshape(h_z_P, (1, 1, I, 1, 1, 1, I, 1))
-        Pz = jnp.reshape(z_Q, (1, 1, I, J, 1, 1, 1, J))
-        w = jnp.reshape(w, (1, 1, 1, 1, L, K, I, J))
+    # Take product and sum along last four axes
+    A = w**θ * B1 * B2 * B3 * Phλ * Phc * Phz * Pz
+    Hwθ = jnp.sum(A, axis=(4, 5, 6, 7))
 
-        # Take product and sum along last four axes
-        A = w**θ * B1 * B2 * B3 * Phλ * Phc * Phz * Pz
-        Hwθ = jnp.sum(A, axis=(4, 5, 6, 7))
+    # Define and return Tw
+    Tw = 1 + β * Hwθ**(1/θ)
+    return Tw
 
-        # Define and return Tw
-        Tw = 1 + β * Hwθ**(1/θ)
-        return Tw
-
-    # JIT compile the intermediate function _T
-    # T = jax.jit(_T, static_argnums=(1, ))
-    return jax.jit(_T)
+# JIT compile the intermediate function _T
+multi_index_ssy_T = jax.jit(multi_index_ssy_T, static_argnums=(1, ))
 
 
 
@@ -146,7 +143,6 @@ def multi_index_ssy_T_factory(ssy, L, K, I, J):
 
 
 # Indexing functions for mapping between multiple and single indices 
-
 
 @njit
 def split_index(i, M):
@@ -173,9 +169,9 @@ def multi_to_single(l, k, i , j, K, I, J):
 # Discretize SSY model to single-index 
 
 
-def discretize_ssy_single_index(ssy):
+def discretize_ssy_single_index(ssy, L, K, I, J):
     """
-    Build the single index state process.  The discretized version is
+    Build the single index state arrays.  The discretized version is
     converted into single index form to facilitate matrix operations.
 
     The rule for the index is
@@ -194,35 +190,29 @@ def discretize_ssy_single_index(ssy):
 
 
     """
-    # Unpack
-    L, K, I, J = ssy.L, ssy.K, ssy.I, ssy.J
+    # Discretize on a multi-index
+    shapes, params, arrays = discretize_ssy_multi_index(ssy, L, K, I, J)
+
+    # Allocate single index arrays
     N = L * K * I * J
+    P_x = np.zeros((N, N))
+    x_states = np.zeros((4, N))
 
-    # Allocate arrays
-    P_x = jnp.zeros((N, N))
-    x_states = jnp.zeros((4, N))
+    # Populate single index arrays
+    _build_single_index_arrays(shapes, params, arrays, x_states, P_x)
 
-    # Populate arrays
-    state_arrays = (ssy.h_λ_states, ssy.h_c_states,
-                    ssy.h_z_states, ssy.z_states)
-    prob_arrays = ssy.h_λ_P, ssy.h_c_P, ssy.h_z_P, ssy.z_Q
-    _build_single_index_arrays(
-            L, K, I, J, state_arrays, prob_arrays, x_states, P_x
-    )
-    return x_states, P_x
+    # Return single index arrays
+    return shapes, params, arrays, x_states, P_x
 
-@njit
-def _build_single_index_arrays(L, K, I, J,
-                               state_arrays,
-                               prob_arrays,
-                               x_states,
-                               P_x):
-    """
-    Read in SSY data and write to x_states and P_x.
-    """
-
-    h_λ_states, h_c_states, h_z_states, z_states = state_arrays
-    h_λ_P, h_c_P, h_z_P, z_Q = prob_arrays
+#@njit
+def _build_single_index_arrays(shapes, params, arrays, x_states, P_x):
+    # Unpack
+    L, K, I, J = shapes
+    (h_λ_states, h_λ_P,              
+     h_c_states, h_c_P,
+     h_z_states, h_z_P,
+     z_states,   z_Q,
+     σ_c_states, σ_z_states) = arrays
 
     N = L * K * I * J
 
@@ -235,47 +225,42 @@ def _build_single_index_arrays(L, K, I, J,
             P_x[m, mp] = h_λ_P[l, lp] * h_c_P[k, kp] * h_z_P[i, ip] * z_Q[i, j, jp]
 
 
-def compute_H(ssy, P_x):
+def compute_H(ssy, L=4, K=4, I=4, J=4):
     " An interface to the fast function _compute_H. "
-    H = _compute_H(ssy.unpack(),
-                      ssy.L, ssy.K, ssy.I, ssy.J,
-                      ssy.h_λ_states,
-                      ssy.σ_c_states,
-                      ssy.σ_z_states,
-                      ssy.z_states,
-                      P_x)
+    shapes, params, arrays, x_states, P_x = discretize_ssy_single_index(
+            ssy, L, K, I, J)
+    H = _compute_H(shapes, params, arrays, x_states, P_x)
     return H
 
-
-@njit
-def _compute_H(ssy_params,
-               L, K, I, J,
-               h_λ_states,
-               σ_c_states,
-               σ_z_states,
-               z_states,
-               P_x):
+#@njit
+def _compute_H(shapes, params, arrays, x_states, P_x):
     """
     Compute the matrix H in the SSY model using the single-index
     framework.
 
     """
     # Unpack
-    (β, γ, ψ,
-        μ_c, ρ, ϕ_z, ϕ_c,
-        ρ_z, ρ_c, ρ_λ,
-        s_z, s_c, s_λ) = ssy_params
+    β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ = params
+    L, K, I, J = shapes
+    (h_λ_states, h_λ_P,              
+     h_c_states, h_c_P,
+     h_z_states, h_z_P,
+     z_states,   z_Q,
+     σ_c_states, σ_z_states) = arrays
+
+    # Set up
     N = L * K * I * J
     θ = (1 - γ) / (1 - 1/ψ)
-    H = jnp.empty((N, N))
+    H = np.empty((N, N))
 
+    # Comptue
     for m in range(N):
         l, k, i, j = single_to_multi(m, K, I, J)
         σ_c, σ_z, z = σ_c_states[k], σ_z_states[i], z_states[i, j]
         for mp in range(N):
             lp, kp, ip, jp = single_to_multi(m, K, I, J)
             h_λp = h_λ_states[lp]
-            a = jnp.exp(θ * h_λp + (1 - γ) * (μ_c + z) + 0.5 * (1 - γ)**2 * σ_c**2)
+            a = np.exp(θ * h_λp + (1 - γ) * (μ_c + z) + 0.5 * (1 - γ)**2 * σ_c**2)
             H[m, mp] =  a * P_x[m, mp]
 
     return H
@@ -284,9 +269,10 @@ def _compute_H(ssy_params,
 # Build the Koopmans operator == #
 
 @jax.jit
-def T_single_index(w, params):
+def single_index_ssy_T(w, H, params):
     "T via JAX operations."
-    H, β, θ = params
+    β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ = params
+    θ = (1 - γ) / (1 - 1/ψ)
     Tw = 1 + β * (H @ (w**θ))**(1/θ)
     return Tw
 
@@ -299,22 +285,51 @@ def test_compute_wc_ratio_ssy_multi_index():
     """
     Solve a small version of the model.
     """
+    L, K, I, J = 3, 3, 3, 3
     init_val = 800.0 
     ssy = SSY()
-    L, K, I, J = 3, 3, 3, 3
-    T_multi_index = ssy.multi_index_ssy_T_factory(L, K, I, J)
-    w_init = jnp.ones((L, K, I, J)) * init_val
-    w_star = solver(T_multi_index, w_init, algorithm="newton")
-    print(w_star)
 
-def test_compute_wc_ratio_ssy_single_index():
+    # Build discrete rep of SSY
+    shapes, params, arrays = discretize_ssy_multi_index(ssy, L, K, I, J)
+    arrays = [jax.device_put(array) for array in arrays]
+
+    # Marginalize T
+    T = lambda w : multi_index_ssy_T(w, shapes, params, arrays)
+    # Call the solver
+    w_init = jnp.ones((L, K, I, J)) * init_val
+    w_star = solver(T, w_init, algorithm="newton")
+    return w_star
+
+
+def test_compute_wc_ratio_ssy_single_index(single_index_output=False):
     """
     Solve a small version of the model.
     """
+    L, K, I, J = 3, 3, 3, 3
     init_val = 800.0 
     ssy = SSY()
-    L, K, I, J = 3, 3, 3, 3
-    w_init = jnp.ones((L, K, I, J)) * init_val
-    w_star = solver(T_single_index, w_init, algorithm="newton")
-    print(w_star)
 
+    H = compute_H(ssy, L, K, I, J)
+    H = jax.device_put(H)  # Put H on the device (GPU)
+
+    N = L * K * I * J
+    w_init = jnp.ones(N) * init_val
+
+    # Marginalize T given the parameters
+    T = lambda w: single_index_ssy_T(w, H, ssy.params)
+
+    # Call the solver
+    w_star = solver(T, w_init, algorithm="newton")
+
+    # Return output in desired shape
+    if single_index_output:
+        w_out = w_star
+    else:
+        w_out = jnp.reshape(w_star, (L, K, I, J))
+    return w_out
+
+
+def test_cross_check_single_multi():
+    w_star_single = test_compute_wc_ratio_ssy_single_index()
+    w_star_multi = test_compute_wc_ratio_ssy_multi_index()
+    print(jnp.max(jnp.abs(w_star_single - w_star_multi)))

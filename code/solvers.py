@@ -62,7 +62,7 @@ def newton_solver(f,
 
         q(x) := x - J(x)^{-1} g(x)
 
-    and passes this function to fwd_solver.
+    and passes this function to successive_approx.
 
     To compute J(x)^{-1} g(x) we can in principle use
     `jnp.linalg.solve(jax.jacobian(g)(x), g(x))`. However, this operation is
@@ -86,7 +86,7 @@ def newton_solver(f,
                 jac_x_prod, g(x), 
                 atol=bicgstab_atol)[0]
         return x - b
-    return fwd_solver(q, x_init, tol, max_iter, verbose, print_skip)
+    return successive_approx(q, x_init, tol, max_iter, verbose, print_skip)
 
 
 def anderson_solver(f, 
@@ -164,7 +164,7 @@ def solver(f,
                   Falling back to successive approximation.
                """
         print(dedent(msg))
-        solver = fwd_solver
+        solver = successive_approx
 
     # Call the solver
     x_star, num_iter = solver(f, x_init)

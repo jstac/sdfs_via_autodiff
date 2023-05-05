@@ -1,50 +1,9 @@
-# == Iteration == #
+"""
+This code is in the process of being moved over to discrete_case/ssy_wc_ratio.py
 
-def wc_ratio_single_index(ssy, 
-                          algorithm="newton",
-                          init_val=800, 
-                          single_index_output=False,   
-                          verbose=True):
-    """
-    Iterate to convergence on the Koopmans operator associated with the 
-    SSY model and return the wealth consumption ratio.
+(Or abandoned)
 
-    """
-
-    # Unpack 
-    β, θ = ssy.β, ssy.θ
-
-    N = ssy.L * ssy.K * ssy.I * ssy.J
-    x_states, P_x = discretize_single_index(ssy)
-    H = compute_H(ssy, P_x)
-
-    H = jax.device_put(H)  # Put H on the device (GPU)
-    params = H, β, θ 
-
-    w_init = jnp.ones(N) * init_val
-
-    try:
-        solver = solvers[algorithm]
-    except KeyError:
-        msg = f"""\
-                  Algorithm {algorithm} not found.  
-                  Falling back to successive approximation.
-               """
-        print(dedent(msg))
-        solver = fwd_solver
-
-    # Marginalize T given the parameters
-    T_operator = lambda x: T(x, params)
-    # Call the solver
-    w_star, num_iter = solver(T_operator, w_init)
-
-    # Return output in desired shape
-    if single_index_output:
-        w_out = w_star
-    else:
-        w_out = jnp.reshape(w_star, (ssy.L, ssy.K, ssy.I, ssy.J))
-
-    return w_out
+"""
 
 
 
