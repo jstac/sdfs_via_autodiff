@@ -11,12 +11,13 @@ from textwrap import dedent
 default_tolerance = 1e-7
 default_max_iter = int(1e6)
 
-def fwd_solver(f,
-               x_init,
-               tol=default_tolerance,
-               max_iter=default_max_iter,
-               verbose=True,
-               print_skip=1000):
+def successive_approx(f,
+                      x_init,
+                      tol=default_tolerance,
+                      max_iter=default_max_iter,
+                      verbose=True,
+                      print_skip=1000):
+
     "Uses successive approximation on f."
 
     if verbose:
@@ -131,7 +132,7 @@ def fixed_point_via_gradient_decent(f, x_init):
     res = gd.run(init_params=x_init)
     solution, state = res
 
-    return solution
+    return solution, state
 
 
 # == List solvers for simple access == #
@@ -140,9 +141,35 @@ def fixed_point_via_gradient_decent(f, x_init):
 solvers = dict((("newton", newton_solver),
                 ("anderson", anderson_solver),
                 ("gd", fixed_point_via_gradient_decent),
-                ("successive_approx", fwd_solver)))
+                ("successive_approx", successive_approx)))
 
 
+# == Interface == #
+
+def solver(f, 
+           x_init,
+           algorithm="newton",
+           verbose=True):
+    """
+
+    A simple front end to the other solvers.
+
+    """
+
+    try:
+        solver = solvers[algorithm]
+    except KeyError:
+        msg = f"""\
+                  Algorithm {algorithm} not found.  
+                  Falling back to successive approximation.
+               """
+        print(dedent(msg))
+        solver = fwd_solver
+
+    # Call the solver
+    x_star, num_iter = solver(f, x_init)
+
+    return x_star
 
 
 
