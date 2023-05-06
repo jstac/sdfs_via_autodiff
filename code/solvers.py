@@ -5,6 +5,11 @@ import jaxopt
 from numba import njit
 from textwrap import dedent
 
+# use 64 bit floats
+from jax.config import config
+config.update("jax_enable_x64", True)
+config.update("jax_enable_x64", True)
+
 
 # == Fixed point solvers == #
 
