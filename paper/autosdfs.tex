@@ -6,6 +6,7 @@
 %\makeatother
 
 
+
 %\usepackage{epsfig}
 \usepackage{graphics, stackrel}
 \usepackage{amsmath, amssymb, amsthm}
@@ -449,28 +450,30 @@ of the operator $\TT$ defined by
 
 \subsection{Example: The SSY Case}
 
-In the long run risk model of \cite{schorfheide2018identifying}, the state
-process takes the form 
+To implement the Koopmans operator $\TT$, we need to specify the linear operator
+$\HH$.  Here we specify $\HH$ for the 
+the long run risk model of \cite{schorfheide2018identifying}.  
+
+In this model, the state process takes the form 
 %
 \begin{equation}\label{eq:state}
     X_t := (h_{\lambda, t}, h_{c, t}, h_{z, t}, z_t)  
 \end{equation}
 %
-where, for $i \in \{z, c, \lambda\}$,
+where
+\begin{equation*}
+    z_{t+1} = \rho \, z_t + (1 - \rho^2)^{1/2} \, \sigma_{z, t} \, \epsilon_{t+1}
+\end{equation*}
 %
-\begin{align*}
-    h_{i, t+1}
-        & = \rho_i \, h_{i,t} + s_{i} \, \eta_{i, t+1}
-        \\
-    \sigma_{i,t} 
-        & = \phi_i \, \bar{\sigma} \, \exp(h_{i,t}),
-        \\
-    z_{t+1} 
-        & = \rho \, z_t + (1 - \rho^2)^{1/2} \, 
-                \sigma_{z, t} \, \epsilon_{t+1}
-\end{align*}
+and
 %
-
+\begin{equation*}
+    \sigma_{i,t} = \phi_i \, \bar{\sigma} \, \exp(h_{i,t}),
+    \qquad
+    h_{i, t+1} = \rho_i \, h_{i,t} + s_{i} \, \eta_{i, t+1},
+    \qquad
+    i \in \{z, c, \lambda\}.
+\end{equation*}
 
 The consumption and preference shock growth rates are
 %
