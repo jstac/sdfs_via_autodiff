@@ -6,24 +6,31 @@ jupytext:
     format_version: 0.13
     jupytext_version: 1.14.5
 kernelspec:
-  display_name: Python 3 (ipykernel)
+  display_name: Python 3
   language: python
   name: python3
 ---
 
 ```{code-cell} ipython3
-%env CUDA_VISIBLE_DEVICES=1
+# %env CUDA_VISIBLE_DEVICES=1
 ```
 
 ```{code-cell} ipython3
-run ../src/wc_ratio_continuous.py
+run ../ssy_model.py
+```
+
+```{code-cell} ipython3
+run ../../solvers.py
+```
+
+```{code-cell} ipython3
+run ssy_wc_ratio_continuous.py
 ```
 
 ```{code-cell} ipython3
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
-from ssy_model import wc_loglinear_factory
 ```
 
 ```{code-cell} ipython3
@@ -40,18 +47,22 @@ ssy = SSY()
 # Test wc ratio
 
 ```{code-cell} ipython3
-zs   = 30
-hzs  = 30
-hcs  = 30
-hλs  = 30
+zs   = 15
+hzs  = 15
+hcs  = 15
+hλs  = 15
 std_devs = 5.0
 w_init = jnp.ones(shape=(hλs, hcs, hzs, zs))
 ```
 
 ```{code-cell} ipython3
-# mesh_grids = jnp.meshgrid(*build_grid(ssy, hλs, hcs, hzs, zs, std_devs), indexing='ij')
-# x_flat = np.asarray([grid.ravel() for grid in mesh_grids])
-# w_init = jnp.asarray([wc_loglinear(x_flat[:, i]) for i in range(x_flat.shape[1])]).reshape((hλs, hcs, hzs, zs))
+wc_loglinear = wc_loglinear_factory(ssy)
+```
+
+```{code-cell} ipython3
+mesh_grids = jnp.meshgrid(*build_grid(ssy, hλs, hcs, hzs, zs, std_devs), indexing='ij')
+x_flat = np.asarray([grid.ravel() for grid in mesh_grids])
+w_init = jnp.asarray([wc_loglinear(x_flat[:, i]) for i in range(x_flat.shape[1])]).reshape((hλs, hcs, hzs, zs))
 ```
 
 ## Successive evaluation
@@ -78,7 +89,7 @@ out
 grids, out = wc_ratio_continuous(ssy, h_λ_grid_size=hλs, h_c_grid_size=hcs, 
                                  h_z_grid_size=hzs, z_grid_size=zs, 
                                  num_std_devs=std_devs, mc_draw_size=5000, 
-                                 w_init=w_init, ram_free=20, tol=1e-5, algorithm="AA", 
+                                 w_init=w_init, ram_free=20, algorithm="anderson", 
                                  write_to_file=True, filename='w_star_data.npy')
 ```
 
@@ -235,33 +246,116 @@ hcs  = 15
 hλs  = 15
 std_devs = 5.0
 w_init = jnp.ones(shape=(hλs, hcs, hzs, zs))
-mc_draw_size = 3000
+mc_draw_size = 5000
 seed = 1234
 ```
 
 ```{code-cell} ipython3
-batch_size = get_batch_size(zs*hzs*hcs*hλs, mc_draw_size=5000, ram_free=10)
+batch_size = get_batch_size(zs*hzs*hcs*hλs, mc_draw_size=mc_draw_size, ram_free=10)
 ```
 
 ```{code-cell} ipython3
-ssy_params = jnp.array(ssy.unpack())
-grids = build_grid(ssy, hλs, hcs, hzs, zs, std_devs)
-
-# generate shocks to evaluate the inner expectation
-key = jax.random.PRNGKey(seed)
-mc_draws = jax.random.normal(key, shape=(4, mc_draw_size))
-```
-
-```{code-cell} ipython3
-params = ssy_params, grids, mc_draws
-T = fun_factory(params, batch_size=batch_size)
+batch_size
 ```
 
 ```{code-cell} ipython3
 w_init = jnp.zeros(shape=(hλs, hcs, hzs, zs)) 
 ```
 
-## Define some functions
+```{code-cell} ipython3
+mesh_grids = jnp.meshgrid(*build_grid(ssy, hλs, hcs, hzs, zs, std_devs), indexing='ij')
+x_flat = np.asarray([grid.ravel() for grid in mesh_grids])
+w_init = jnp.asarray([wc_loglinear(x_flat[:, i]) for i in range(x_flat.shape[1])]).reshape((hλs, hcs, hzs, zs))
+```
+
+## Test Jax's AA Algorithm
+
+```{code-cell} ipython3
+import jaxopt
+```
+
+```{code-cell} ipython3
+ssy_params = jnp.array(ssy.params)
+grids = build_grid(ssy, hλs, hcs, hzs, zs, std_devs)
+
+# generate shocks to evaluate the inner expectation
+key = jax.random.PRNGKey(1234)
+mc_draws = jax.random.normal(key, shape=(4, mc_draw_size))
+
+# determine batch_size
+state_size = hλs* hcs * hzs * zs
+batch_size = 20 * 30000000 // mc_draw_size
+if state_size <= batch_size:
+    batch_size = state_size
+else:
+    while (state_size % batch_size > 0):
+        batch_size -= 1
+
+print("batch_size =", batch_size)
+
+params = ssy_params, grids, mc_draws
+T_tmp = fun_factory(params, batch_size=batch_size)
+
+def T(w):
+    return T_tmp(w, params)
+```
+
+```{code-cell} ipython3
+%%time
+W_tmp = jnp.copy(w_init)
+for i in range(20):
+    W_tmp = T(W_tmp)
+```
+
+```{code-cell} ipython3
+%%time
+AA = jaxopt.AndersonAcceleration(T, verbose=False, mixing_frequency=5, tol=1e-7,
+                                 maxiter=500, history_size=10, beta=5.0, implicit_diff=False, ridge=1e-6, 
+                                 jit=True, unroll=True)
+
+W_tmp = jnp.copy(w_init)
+for i in range(10):
+    W_tmp = T(W_tmp)
+
+out = AA.run(W_tmp)
+w_out = out[0]
+current_iter = int(out[1][0])
+```
+
+```{code-cell} ipython3
+print(np.max(np.abs(w_star-out[0])), "iter_num =", out[1].iter_num)
+```
+
+```{code-cell} ipython3
+out[1][0]
+```
+
+```{code-cell} ipython3
+out[0]
+```
+
+```{code-cell} ipython3
+%%time
+w_star, iter = anderson_solver(T, w_init, max_iter=500)
+```
+
+```{code-cell} ipython3
+w_star
+```
+
+```{code-cell} ipython3
+print(np.max(np.abs(w_accurate[0]-out[0])), "iter_num =", out[1].iter_num)
+```
+
+```{code-cell} ipython3
+np.max(np.abs(w_est[0]-w_accurate[0].ravel()))
+```
+
+```{code-cell} ipython3
+
+```
+
+### Naive AA (deprecated)
 
 ```{code-cell} ipython3
 # one dimension for jax
@@ -326,6 +420,10 @@ def AA_solver(f, w_init, m = 2, tol=1e-7, max_iter=10000, print_skip=10, verbose
 ```
 
 ```{code-cell} ipython3
+
+```
+
+```{code-cell} ipython3
 %%time
 w_est = AA_solver(lambda x: T(x, params), w_init, m=3, tol=1e-5)
 ```
@@ -350,33 +448,4 @@ np.max(np.abs(w_est[0].ravel() - w_accurate[0].ravel()))
 
 ```{code-cell} ipython3
 np.max(np.abs(w_out[0].ravel() - w_est[0].ravel()))
-```
-
-# Test Jax's AA Algorithm
-
-```{code-cell} ipython3
-import jaxopt
-```
-
-```{code-cell} ipython3
-AA = jaxopt.AndersonAcceleration(lambda x: T(x, params), verbose=True, mixing_frequency=5, tol=1e-5,
-                                 maxiter=500, history_size=2, beta=8.0, implicit_diff=False, ridge=1e-5, jit=True, unroll=True)
-AA
-```
-
-```{code-cell} ipython3
-%%time
-out = AA.run(w_init)
-```
-
-```{code-cell} ipython3
-print(np.max(np.abs(w_accurate[0]-out[0])), "iter_num =", out[1].iter_num)
-```
-
-```{code-cell} ipython3
-np.max(np.abs(w_est[0]-w_accurate[0].ravel()))
-```
-
-```{code-cell} ipython3
-
 ```

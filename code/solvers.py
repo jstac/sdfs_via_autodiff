@@ -101,7 +101,6 @@ def anderson_solver(f,
                     verbose=True):
     # hard coded parameters for now
     jax_a = jaxopt.AndersonAcceleration(f, 
-                                        verbose=verbose, 
                                         mixing_frequency=5,
                                         tol=tol, 
                                         maxiter=max_iter, 
