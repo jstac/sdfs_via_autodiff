@@ -97,17 +97,17 @@ def newton_solver(f,
 def anderson_solver(f, 
                     x_init, 
                     tol=default_tolerance, 
-                    max_iter=default_max_iter,
+                    max_iter=1000,
                     verbose=True):
     # hard coded parameters for now
     jax_a = jaxopt.AndersonAcceleration(f, 
-                                        mixing_frequency=5,
+                                        mixing_frequency=4,
                                         tol=tol, 
                                         maxiter=max_iter, 
-                                        history_size=2,
+                                        history_size=10,
                                         beta=8.0, 
                                         implicit_diff=False,
-                                        ridge=1e-5, 
+                                        ridge=1e-6, 
                                         jit=True, 
                                         unroll=True)
     out = jax_a.run(x_init)
