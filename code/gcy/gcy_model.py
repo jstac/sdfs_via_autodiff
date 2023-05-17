@@ -1,9 +1,13 @@
 """
 
-Gomez-Cram--Yaron model.  
+Gomez-Cram--Yaron model (2020).  
 
 There are six states for the recursive utility / wealth-consumption ratio
-problem, namely
+problem, given by 
+
+    x = (z, z_π, h_z, h_c, h_zπ, h_λ)
+
+They evolve according to 
 
     z' = ρ * z + ρ_π * z_π + σ_z * η0
 
@@ -16,6 +20,18 @@ problem, namely
     h_zπ' = ρ_zπ * h_zπ + s_zπ * η4
 
     h_λ' = ρ_λ * h_λ + s_λ * η5
+
+with
+
+    σ_z = φ_z * exp(h_z)
+
+    σ_zπ = φ_zπ * exp(h_zπ)
+    
+Consumption growth is
+
+    g_c' = μ_c + z' + φ_c * ξ
+
+
 
 """
 
@@ -41,4 +57,16 @@ class GCY:
                     φ_zπ=0.08 * 0.0015,  # φ_xπ * σ
                     ρ_zπ=0.970,  # ρ_hxπ
                     s_zπ=0.271  # σ_hxπ
+
+        self.β, self.ψ, self.γ = β, ψ, γ 
+        self.ρ_λ, self.s_λ, self.μ_c, self.φ_c, self.ρ = ρ_λ, s_λ, μ_c, φ_c, ρ 
+        self.ρ_π, self.φ_z, self.ρ_c = ρ_π, φ_z, ρ_c
+        self.s_c, self.ρ_z, self.s_z = s_c, ρ_z, s_z 
+        self.ρ_ππ, self.φ_zπ, self.ρ_zπ, self.s_zπ = ρ_ππ, φ_zπ, ρ_zπ, s_zπ
+
+        # Pack params into an array
+        self.params = β, ψ, γ, 
+                 ρ_λ, s_λ, μ_c, φ_c, ρ, 
+                 ρ_π, φ_z, ρ_c, s_c, ρ_z, s_z, 
+                 ρ_ππ, φ_zπ, ρ_zπ, s_zπ
 

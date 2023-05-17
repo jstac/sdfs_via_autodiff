@@ -280,10 +280,11 @@ pricing face the need to handle a growing list of state variables when trying to
 match existing theory to the data.  For example, while the seminal paper of
 \cite{bansal2004risks} used just two state variables to model the
 wealth-consumption ratio, subsequent work has added many features to the
-consumption side of this model.  For example, \cite{schorfheide2018identifying}
-added preference shocks and an additional stochastic volatility term, leading to
-four state variables. \cite{gomez2021important} added two more state variables
-to handle expectations of inflation.  
+consumption side of this model.  A representative study,
+\cite{schorfheide2018identifying} adds preference shocks and an additional
+stochastic volatility term, leading to four state variables.
+\cite{gomez2021important} adds two more state variables to handle expectations
+of inflation.  
 
 To date, the standard method for handling these kinds of models has been
 log-linearization.  However, the underlying models are highly nonlinear and,
@@ -566,10 +567,14 @@ where
 %
 and
 %
-\begin{equation*}
+\begin{equation}
 	\sigma_{i,t} 
 	= \phi_i \, \bar{\sigma} \, \exp(h_{i, t})
-	\quad \text{where} \quad
+\end{equation}
+%
+with
+%
+\begin{equation*}
 	h_{i, t+1}
 	= \rho_i \, h_{i,t} + s_i \, \eta_{i, t+1}
 	\quad \text{for } i \in \{z, c, z\pi \}.
