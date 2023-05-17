@@ -7,7 +7,6 @@ the GCY model.
 """
 
 import numpy as np
-
 from numba import njit
 
 import jax
@@ -44,14 +43,13 @@ def discretize_gcy(gcy, shapes):
 
     The discretizations for z and z_π use iterations of the Rouwenhorst method. 
 
-        z[i_h_z, i_z] is the i_z-th z state when h_z = h_z[i_h_z] 
+        z_π_states[i_h_zπ, i_z_π] is the i_z_π-th z_π state 
 
-        z_π[i_h_zπ, i_z_π] is the i_z_π-th z_π state when h_zπ = h_zπ[i_h_zπ] 
+        z_π_Q[i_h_zπ, i_z_π, j_z_π] = trans prob for z_π 
 
-        z_Q[i_z_π, i_h_z, i_z, j_z] = trans prob for z given i_z_π, i_h_z
+        z_states[i_z_π, i_h_z, i_h_zπ, i_z] is the i_z-th z state 
 
-        z_π_Q[i_h_zπ, i_z_π, j_z_π] = trans prob for z_π when h_zπ index = i_h_zπ
-
+        z_Q[i_z_π, i_h_z, i_h_zπ, i_z, i_z] = trans prob for z 
     """
 
     # Organize and unpack
@@ -61,7 +59,7 @@ def discretize_gcy(gcy, shapes):
          ρ_π, φ_z, ρ_c, s_c, ρ_z, s_z, 
          ρ_ππ, φ_zπ, ρ_zπ, s_zπ) = params
 
-    # Discretize
+    # Discretize the h processes
     h_z_mc = rouwenhorst(n_h_z, ρ_z, s_z)
     h_c_mc = rouwenhorst(n_h_c, ρ_c, s_c)
     h_zπ_mc = rouwenhorst(n_h_zπ, ρ_zπ, s_zπ)
@@ -152,6 +150,7 @@ def T_gcy(w, shapes, params, arrays):
      h_λ_states,  h_λ_Q)   = arrays
 
     θ = (1 - γ) / (1 - 1/ψ)
+    n = len(shapes)
 
     # Number the states (z, z_π, h_z, h_c, h_zπ, h_λ)
     state_numbers = { 'z'      : 0,
@@ -165,23 +164,23 @@ def T_gcy(w, shapes, params, arrays):
 
     # Create intermediate arrays
     A1 = jnp.exp(θ * h_λ_states)
-    indices_a = [1] * len(shapes) 
-    indices_b = [1] * len(shapes) 
+    indices_a = [1] * n 
+    indices_b = [1] * n 
     indices_b[state_numbers['h_λ']] = n_h_λ
     indices = indices_a + indices_b
     A1 = jnp.reshape(A1, indices)
 
     A2 = jnp.exp(0.5 * ((1 - γ) * σ_c_states)**2)
-    indices_a = [1] * len(shapes) 
-    indices_b = [1] * len(shapes) 
+    indices_a = [1] * n 
+    indices_b = [1] * n 
     indices_a[state_numbers['h_c']] = n_h_c
     indices = indices_a + indices_b
     A2 = jnp.reshape(A2, indices)
 
     A3 = jnp.exp((1 - γ) * (μ_c + z_states))
     # z_states have the form [i_z_π, i_h_z, i_h_zπ, i_z]
-    indices_a = [1] * len(shapes) 
-    indices_b = [1] * len(shapes) 
+    indices_a = [1] * n 
+    indices_b = [1] * n 
     indices_a[state_numbers['z_π']] = n_z_π
     indices_a[state_numbers['h_z']] = n_h_z
     indices_a[state_numbers['h_zπ']] = n_h_zπ
@@ -190,40 +189,40 @@ def T_gcy(w, shapes, params, arrays):
     A3 = jnp.reshape(A3, indices)
 
     # Reshape h_z_Q
-    ones = [1] * len(shapes) 
-    ones[state_numbers['h_z']] = n_h_z
-    h_z_Q = jnp.reshape(h_z_Q, ones + ones)
+    indices = [1] * n 
+    indices[state_numbers['h_z']] = n_h_z
+    h_z_Q = jnp.reshape(h_z_Q, indices + indices)
 
     # Reshape h_zπ_Q
-    ones = [1] * len(shapes) 
-    ones[state_numbers['h_zπ']] = n_h_zπ
-    h_zπ_Q = jnp.reshape(h_zπ_Q, ones + ones)
+    indices = [1] * n 
+    indices[state_numbers['h_zπ']] = n_h_zπ
+    h_zπ_Q = jnp.reshape(h_zπ_Q, indices + indices)
 
     # Reshape h_λ_Q
-    ones = [1] * len(shapes) 
-    ones[state_numbers['h_λ']] = n_h_λ
-    h_λ_Q = jnp.reshape(h_λ_Q, ones + ones)
+    indices = [1] * n 
+    indices[state_numbers['h_λ']] = n_h_λ
+    h_λ_Q = jnp.reshape(h_λ_Q, indices + indices)
 
     # Reshape h_c_Q
-    ones = [1] * len(shapes) 
-    ones[state_numbers['h_c']] = n_h_c
-    h_c_Q = jnp.reshape(h_c_Q, ones + ones)
+    indices = [1] * n 
+    indices[state_numbers['h_c']] = n_h_c
+    h_c_Q = jnp.reshape(h_c_Q, indices + indices)
 
     # Reshape z_π_Q[i_h_zπ, i_z_π, j_z_π]
-    indices_a = [1] * len(shapes) 
+    indices_a = [1] * n 
     indices_a[state_numbers['h_zπ']] = n_h_zπ
     indices_a[state_numbers['z_π']] = n_z_π
-    indices_b = [1] * len(shapes) 
+    indices_b = [1] * n 
     indices_b[state_numbers['z_π']] = n_z_π
     z_π_Q = jnp.reshape(z_π_Q, indices_a + indices_b)
 
     # Reshape z_Q[i_z_π, i_h_z, i_h_zπ, i_z, j_z]
-    indices_a = [1] * len(shapes) 
+    indices_a = [1] * n 
     indices_a[state_numbers['z_π']] = n_z_π
     indices_a[state_numbers['h_z']] = n_h_z
     indices_a[state_numbers['h_zπ']] = n_h_zπ
     indices_a[state_numbers['z']] = n_z
-    indices_b = [1] * len(shapes) 
+    indices_b = [1] * n 
     indices_b[state_numbers['z']] = n_z
     z_Q = jnp.reshape(z_Q, indices_a + indices_b)
 
@@ -236,7 +235,6 @@ def T_gcy(w, shapes, params, arrays):
     return Tw
 
 T_gcy = jax.jit(T_gcy, static_argnums=(1, ))
-
 
 
 
@@ -266,6 +264,7 @@ def T_gcy_loops(w, shapes, params, arrays):
 
     θ = (1 - γ) / (1 - 1/ψ)
     Hwθ = np.empty(shapes)
+
     for i_h_z, h_z in enumerate(h_z_states):
         for i_h_c, h_c in enumerate(h_c_states):
             for i_h_zπ, h_zπ in enumerate(h_zπ_states):
@@ -283,15 +282,17 @@ def T_gcy_loops(w, shapes, params, arrays):
                                             for j_h_zπ, h_zπp in enumerate(h_zπ_states):
                                                 for j_h_λ, h_λp in enumerate(h_λ_states):
                                                         a1 = np.exp(θ * h_λp)
+                                                        p0 = z_Q[i_z_π, i_h_z, i_h_zπ, i_z, j_z] 
+                                                        p1 = z_π_Q[i_h_zπ, i_z_π, j_z_π] 
+                                                        p2 = h_z_Q[i_h_z, j_h_z] 
+                                                        p3 = h_c_Q[i_h_c, j_h_c] 
+                                                        p4 = h_zπ_Q[i_h_zπ, j_h_zπ] 
+                                                        p5 = h_λ_Q[i_h_λ, j_h_λ] 
+                                                        a = a1 * a2 * a3
+                                                        p = p0 * p1 * p2 * p3 * p4 * p5 
                                                         Hwθ_sum +=  \
                                                             w[j_z, j_z_π, j_h_z, j_h_c, j_h_zπ, j_h_λ]**θ * \
-                                                            a1 * a2 * a3 * \
-                                                            h_λ_Q[i_h_λ, j_h_λ] * \
-                                                            h_c_Q[i_h_c, j_h_c] * \
-                                                            h_z_Q[i_h_z, j_h_z] * \
-                                                            h_zπ_Q[i_h_zπ, j_h_zπ] * \
-                                                            z_Q[i_z_π, i_h_z, i_h_zπ, i_z, j_z] * \
-                                                            z_π_Q[i_h_zπ, i_z_π, j_z_π]
+                                                             p * a
                             Hwθ[i_z, i_z_π, i_h_z, i_h_c, i_h_zπ, i_h_λ] = Hwθ_sum
 
     # Define and return Tw
