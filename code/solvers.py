@@ -81,6 +81,7 @@ def newton_solver(f,
     invert arbitrary linear maps.
     """
     g = lambda x: f(x) - x
+    @jax.jit
     def q(x):
         # First we define the map v -> J(x) v from x and g
         jac_x_prod = lambda v: jax.jvp(g, (x,), (v,))[1]

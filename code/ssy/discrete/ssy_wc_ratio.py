@@ -6,6 +6,7 @@ the SSY model.
 
 import jax
 import jax.numpy as jnp
+import quantecon as qe
 
 # Import local modules
 import sys
@@ -204,7 +205,10 @@ def test_compute_wc_ratio_ssy(shapes=(2, 3, 4, 5), algo="successive_approx"):
     # Call the solver
     init_val = 800.0 
     w_init = jnp.ones(shapes) * init_val
+    qe.tic()
     w_star = solver(T, w_init, algorithm=algo)
+    t = qe.toc()
+    print(f"Computed solution in {t} seconds.")
 
     return w_star
 
