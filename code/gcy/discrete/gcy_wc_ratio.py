@@ -104,7 +104,7 @@ def discretize_gcy(gcy, shapes):
     # Note that z will have a one-dimensional grid for each
     # pair (z_π, σ_z, h_zπ), and hence each (z_π, h_z, h_zπ).
     z_states = np.zeros((n_z_π, n_h_z, n_h_zπ, n_z))
-    # z_Q holds transition probs over i_z for each (i_z_π, i_h_z)
+    # z_Q holds transition probs over i_z for each (i_z_π, i_h_z, i_h_zπ)
     z_Q = np.zeros((n_z_π, n_h_z, n_h_zπ, n_z, n_z))
     for i_h_zπ in range(n_h_zπ):
         for i_h_z, σ_z in enumerate(σ_z_states):
@@ -121,6 +121,7 @@ def discretize_gcy(gcy, shapes):
                h_c_states,  h_c_Q,  σ_c_states, 
                h_zπ_states, h_zπ_Q, σ_zπ_states,
                h_λ_states,  h_λ_Q)
+
 
     return arrays
 
@@ -215,6 +216,8 @@ def T_gcy(w, shapes, params, arrays):
     indices_b = [1] * n 
     indices_b[state_numbers['z_π']] = n_z_π
     z_π_Q = jnp.reshape(z_π_Q, indices_a + indices_b)
+
+    breakpoint()
 
     # Reshape z_Q[i_z_π, i_h_z, i_h_zπ, i_z, j_z]
     indices_a = [1] * n 

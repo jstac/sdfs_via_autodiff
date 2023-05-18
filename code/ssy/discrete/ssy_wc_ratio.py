@@ -29,10 +29,10 @@ def discretize_ssy(ssy, shapes):
     The discretization uses iterations of the Rouwenhorst method.  The
     indices are
 
-        h_λ[l] for l in range(L)
-        h_c[k] for k in range(K)
-        h_z[i] for i in range(I)
-        z[i, j] is the j-th z state when σ_z = σ_z[i] for j in range(J)
+        h_λ[l] for l in range(n_h_λ)
+        h_c[k] for k in range(n_h_c)
+        h_z[i] for i in range(n_h_z)
+        z[i, j] is the j-th z state when σ_z = σ_z[i] for j in range(n_z)
 
         z_Q[i, j, jp] is trans prob from j to jp when σ_z index = i
 
@@ -40,27 +40,27 @@ def discretize_ssy(ssy, shapes):
 
     # Organize and unpack
     params = ssy.params
-    L, K, I, J = shapes
+    n_h_λ, n_h_c, n_h_z, n_z = shapes
     β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ = params
 
     # Discretize
-    h_λ_mc = rouwenhorst(L, ρ_λ, s_λ, 0)
-    h_c_mc = rouwenhorst(K, ρ_c, s_c, 0)
-    h_z_mc = rouwenhorst(I, ρ_z, s_z, 0)
+    h_λ_mc = rouwenhorst(n_h_λ, ρ_λ, s_λ, 0)
+    h_c_mc = rouwenhorst(n_h_c, ρ_c, s_c, 0)
+    h_z_mc = rouwenhorst(n_h_z, ρ_z, s_z, 0)
 
     # Build states
     h_λ_states = h_λ_mc.state_values
     h_c_states = h_c_mc.state_values
     h_z_states = h_z_mc.state_values
     σ_z_states = ϕ_z * np.exp(h_z_states)
-    z_states = np.zeros((I, J))
+    z_states = np.zeros((n_h_z, n_z))
 
     # Build transition probabilities
-    z_Q = np.zeros((I, J, J))
+    z_Q = np.zeros((n_h_z, n_z, n_z))
 
     for i, σ_z in enumerate(σ_z_states):
-        mc_z = rouwenhorst(J, ρ, σ_z, 0)
-        for j in range(J):
+        mc_z = rouwenhorst(n_z, ρ, σ_z, 0)
+        for j in range(n_z):
             z_states[i, j] = mc_z.state_values[j]
             z_Q[i, j, :] = mc_z.P[j, :]
              
@@ -85,33 +85,33 @@ def T_ssy(w, shapes, params, arrays):
     """
 
     # Unpack
-    L, K, I, J = shapes
+    n_h_λ, n_h_c, n_h_z, n_z = shapes
     (β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ) = params
-    (h_λ_states, h_λ_P,              
-     h_c_states, h_c_P,
-     h_z_states, h_z_P,
+    (h_λ_states, h_λ_Q,              
+     h_c_states, h_c_Q,
+     h_z_states, h_z_Q,
      z_states,   z_Q,
      σ_c_states, σ_z_states) = arrays
     θ = (1 - γ) / (1 - 1/ψ)
-    w = jnp.reshape(w, (1, 1, 1, 1, L, K, I, J))
+    w = jnp.reshape(w, (1, 1, 1, 1, n_h_λ, n_h_c, n_h_z, n_z))
 
 
     # Create intermediate arrays
     A1 = jnp.exp(θ * h_λ_states)
-    A1 = jnp.reshape(A1, (1, 1, 1, 1, L, 1, 1, 1))
+    A1 = jnp.reshape(A1, (1, 1, 1, 1, n_h_λ, 1, 1, 1))
     A2 = jnp.exp(0.5 * ((1 - γ) * σ_c_states)**2)
-    A2 = jnp.reshape(A2, (1, K, 1, 1, 1, 1, 1, 1))
+    A2 = jnp.reshape(A2, (1, n_h_c, 1, 1, 1, 1, 1, 1))
     A3 = jnp.exp((1 - γ) * (μ_c + z_states))
-    A3 = jnp.reshape(A3, (1, 1, I, J, 1, 1, 1, 1))
+    A3 = jnp.reshape(A3, (1, 1, n_h_z, n_z, 1, 1, 1, 1))
 
     # Reshape existing matrices prior to reduction
-    Phλ = jnp.reshape(h_λ_P, (L, 1, 1, 1, L, 1, 1, 1))
-    Phc = jnp.reshape(h_c_P, (1, K, 1, 1, 1, K, 1, 1))
-    Phz = jnp.reshape(h_z_P, (1, 1, I, 1, 1, 1, I, 1))
-    Pz = jnp.reshape(z_Q, (1, 1, I, J, 1, 1, 1, J))
+    h_λ_Q = jnp.reshape(h_λ_Q, (n_h_λ, 1, 1, 1, n_h_λ, 1, 1, 1))
+    h_c_Q = jnp.reshape(h_c_Q, (1, n_h_c, 1, 1, 1, n_h_c, 1, 1))
+    h_z_Q = jnp.reshape(h_z_Q, (1, 1, n_h_z, 1, 1, 1, n_h_z, 1))
+    z_Q = jnp.reshape(z_Q, (1, 1, n_h_z, n_z, 1, 1, 1, n_z))
 
     # Take product and sum along last four axes
-    H = A1 * A2 * A3 * Phλ * Phc * Phz * Pz
+    H = A1 * A2 * A3 * h_λ_Q * h_c_Q * h_z_Q * z_Q
 
     Hwθ = jnp.sum(w**θ * H, axis=(4, 5, 6, 7))
 
@@ -133,35 +133,35 @@ def T_ssy_loops(w, shapes, params, arrays):
     purpose is to test the vectorized code in T_ssy.  It should only be
     used with very small shapes!
     """
-    L, K, I, J = shapes
+    n_h_λ, n_h_c, n_h_z, n_z = shapes
     β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ = params
-    (h_λ_states, h_λ_P,              
-     h_c_states, h_c_P,
-     h_z_states, h_z_P,
+    (h_λ_states, h_λ_Q,              
+     h_c_states, h_c_Q,
+     h_z_states, h_z_Q,
      z_states,   z_Q,
      σ_c_states, σ_z_states) = arrays
     θ = (1 - γ) / (1 - 1/ψ)
-    Hwθ = np.empty((L, K, I, J))
+    Hwθ = np.empty((n_h_λ, n_h_c, n_h_z, n_z))
 
-    for l in range(L):
-        for k in range(K):
-            for i in range(I):
-                for j in range(J):
+    for l in range(n_h_λ):
+        for k in range(n_h_c):
+            for i in range(n_h_z):
+                for j in range(n_z):
                     σ_c, z = σ_c_states[k], z_states[i, j]
                     a2 = np.exp(0.5 * ((1 - γ) * σ_c)**2)
                     a3 = np.exp((1 - γ) * (μ_c + z))
                     Hwθ_sum = 0.0
-                    for lp in range(L):
+                    for lp in range(n_h_λ):
                         h_λp = h_λ_states[lp]
                         a1 = np.exp(θ * h_λp)
-                        for kp in range(K):
-                            for ip in range(I):
-                                for jp in range(J):
+                        for kp in range(n_h_c):
+                            for ip in range(n_h_z):
+                                for jp in range(n_z):
                                     Hwθ_sum +=  \
                                             w[lp, kp, ip, jp]**θ * \
                                             a1 * a2 * a3 * \
-                                            h_λ_P[l, lp] * h_c_P[k, kp] * \
-                                            h_z_P[i, ip] * z_Q[i, j, jp]
+                                            h_λ_Q[l, lp] * h_c_Q[k, kp] * \
+                                            h_z_Q[i, ip] * z_Q[i, j, jp]
                     Hwθ[l, k, i, j] = Hwθ_sum
 
     # Define and return Tw
