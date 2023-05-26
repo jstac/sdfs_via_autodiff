@@ -3,7 +3,7 @@ import jax.numpy as jnp
 import numpy as np
 from functools import partial
 from jax.config import config
-from utils import jit_map_coordinates, vals_to_coords
+from utils import lin_interp, jit_map_coordinates, vals_to_coords
 from quantecon.quad import qnwnorm
 
 import sys
@@ -102,10 +102,7 @@ def Kg_vmap_mc(x, ssy_params, g_vals, grids, mc_draws):
     pf = jnp.exp(next_x[0] * θ)
 
     # Interpolate g(next_x) given g_vals:
-    # Transform next_x to coordinates on grids
-    next_x_coords = vals_to_coords(grids, next_x)
-    # Interpolate using coordinates
-    next_g = jit_map_coordinates(g_vals, next_x_coords)
+    next_g = lin_interp(next_x, g_vals, grids)
 
     e_x = jnp.mean(next_g * pf)
     Kg = const * e_x
@@ -240,10 +237,7 @@ def Kg_vmap_quad(x, ssy_params, g_vals, grids, nodes, weights):
     pf = jnp.exp(next_x[0] * θ)
 
     # Interpolate g(next_x) given g_vals:
-    # Transform next_x to coordinates on grids
-    next_x_coords = vals_to_coords(grids, next_x)
-    # Interpolate using coordinates
-    next_g = jit_map_coordinates(g_vals, next_x_coords)
+    next_g = lin_interp(next_x, g_vals, grids)
 
     e_x = jnp.dot(next_g*pf, weights)
     Kg = const * e_x

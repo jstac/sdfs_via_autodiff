@@ -27,6 +27,15 @@ def vals_to_coords(grids, x_vals):
     return (x_vals - low_bounds) / intervals
 
 
+@jax.jit
+def lin_interp(x, g_vals, grids):
+    """x: jnp array of shape (N, 4)"""
+    coords = vals_to_coords(grids, x)
+    # Interpolate using coordinates
+    next_g = jit_map_coordinates(g_vals, coords)
+    return next_g
+
+
 # def lininterp_funcvals(ssy, function_vals):
 #     """
 #     Builds and returns a jitted callable that implements an approximation of
