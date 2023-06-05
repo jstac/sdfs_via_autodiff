@@ -8,7 +8,7 @@ the GCY model.
 
 import numpy as np
 from numba import njit
-
+import pprint
 import jax
 import jax.numpy as jnp
 
@@ -354,14 +354,23 @@ def T_gcy2(w, shapes, params, arrays):
     indices_a[state_numbers['z']] = n_z
     indices_b = [1] * n
     indices_b[state_numbers['z']] = n_z
-   # z_Q = np.reshape(z_Q, indices_a + indices_b)
-    z_Q= np.expand_dims(z_Q, (3,5,7,8,9,10,11))
-
-
+    # state_numbers = { 'z'      : 0,
+    #                   'z_π'    : 1,
+    #                   'h_z'    : 2,
+    #                   'h_c'    : 3,
+    #                   'h_zπ'   : 4,
+    #                   'h_λ'    : 5}
+    print("line 363 z_Q", z_Q.shape, z_Q[1, 1, 1, 0])
+    z_Q = np.reshape(z_Q, indices_a + indices_b)
+    #z_Q= np.expand_dims(z_Q, (3,5,7,8,9,10,11))
+    print("line 366 z_Q", z_Q.shape, z_Q[0, 1, 1, 0, 1, 0, :,0,0,0,0,0])
+    #pprint.pprint(z_Q)
     # Take product and sum along last six axes
     H = A1 * A2 * A3 * h_z_Q * h_zπ_Q * h_λ_Q * h_c_Q * z_π_Q * z_Q
     Hwθ = np.sum(w**θ * H, axis=(6, 7, 8, 9, 10, 11))
-    #print(Hwθ.shape, Hwθ[0,2,1,0,2, 1])
+    print(Hwθ[0,1,1,0,1, 1], "vec Hw")
+    # i_z = 0, i_z_π=1, i_h_z=1, i_h_c=0, i_h_zpi=1, i_h_lambda=1
+    #w: n_z, n_z_π, n_h_z, n_h_c, n_h_zπ, n_h_λ
     #Hwθ = jnp.sum(w**θ * H, axis=(0, 1, 2, 3, 4, 5))
 
     # Define and return Tw
@@ -394,7 +403,7 @@ def T_gcy_loops(w, shapes, params, arrays):
 
     θ = (1 - γ) / (1 - 1/ψ)
     Hwθ = np.empty(shapes)
-
+    foo=[]
     for i_h_z in range(n_h_z):
         for i_h_c in range(n_h_c):
             for i_h_zπ in range(n_h_zπ):
@@ -425,12 +434,42 @@ def T_gcy_loops(w, shapes, params, arrays):
                                                         Hwθ_sum +=  \
                                                             w[j_z, j_z_π, j_h_z, j_h_c, j_h_zπ, j_h_λ]**θ * \
                                                             p * a
+
+                                                        if i_z==0 and i_z_π==1 and i_h_z==1 and i_h_c==0 and i_h_zπ==1 and i_h_λ==1:
+                                                            foo.append(w[j_z, j_z_π, j_h_z, j_h_c, j_h_zπ, j_h_λ]**θ *p * a)
+                                                            # print("-----")
+                                                            # print("p0", p0)
+                                                            # print("p1", p1)
+                                                            # print("p2", p2)
+                                                            # print("p3", p3)
+                                                            # print("p4", p4)
+                                                            # print("p5", p5)
+                                                            # print("a1", a1)
+                                                            # print("a2", a2)
+                                                            # print("a3", a3)
+                                                            # print("w", w[j_z, j_z_π, j_h_z, j_h_c, j_h_zπ, j_h_λ])
+                                                            # print("-----")
+                                                            if j_z + j_z_π + j_h_z + j_h_c + j_h_zπ + j_h_λ == 0:
+                                                                print("-----")
+                                                                print("p0", p0)
+                                                                print("p1", p1)
+                                                                print("p2", p2)
+                                                                print("p3", p3)
+                                                                print("p4", p4)
+                                                                print("p5", p5)
+                                                                print("a1", a1)
+                                                                print("a2", a2)
+                                                                print("a3", a3)
+                                                                print("w", w[j_z, j_z_π, j_h_z, j_h_c, j_h_zπ, j_h_λ]**θ )
+                                                                print("-----")
                             Hwθ[i_z, i_z_π, i_h_z, i_h_c, i_h_zπ, i_h_λ] = Hwθ_sum
+
 
     # Define and return Tw
     #Hwθ = Hwθ*w**θ
-    #print(Hwθ.shape, Hwθ[0,2,1,0,2, 1],"-line 307")
+    print(Hwθ[0,1,1,0,1, 1],"loop Hw")
     Tw = 1 + β * Hwθ**(1/θ)
+    #pprint.pprint(foo)
     return Tw
 
 
