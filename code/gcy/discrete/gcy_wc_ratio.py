@@ -300,6 +300,12 @@ def T_gcy2(w, shapes, params, arrays):
     #A2 = np.reshape(A2, indices)
 
     A3 = np.exp((1 - γ) * (μ_c + z_states))
+    # state_numbers = { 'z'      : 0,
+    #                   'z_π'    : 1,
+    #                   'h_z'    : 2,
+    #                   'h_c'    : 3,
+    #                   'h_zπ'   : 4,
+    #                   'h_λ'    : 5}
     # z_states have the form [i_z_π, i_h_z, i_h_zπ, i_z]
     indices_a = [1] * n
     indices_b = [1] * n
@@ -308,6 +314,9 @@ def T_gcy2(w, shapes, params, arrays):
     indices_a[state_numbers['h_zπ']] = n_h_zπ
     indices_a[state_numbers['z']] = n_z
     indices = indices_a + indices_b
+    A3 = np.swapaxes(A3, 2, 3)
+    A3 = np.swapaxes(A3, 1, 2)
+    A3 = np.swapaxes(A3, 0, 1)
     A3= np.expand_dims(A3, (3,5,6,7,8,9,10,11))
     #A3 = np.reshape(A3, indices)
 
@@ -335,6 +344,12 @@ def T_gcy2(w, shapes, params, arrays):
     #h_c_Q = np.reshape(h_c_Q, indices + indices)
     h_c_Q= np.expand_dims(h_c_Q, (0,1,2,4,5,6,7,8,10,11))
 
+    # state_numbers = { 'z'      : 0,
+    #                   'z_π'    : 1,
+    #                   'h_z'    : 2,
+    #                   'h_c'    : 3,
+    #                   'h_zπ'   : 4,
+    #                   'h_λ'    : 5}
     # Reshape z_π_Q[i_h_zπ, i_z_π, j_z_π]
     indices_a = [1] * n
     indices_a[state_numbers['h_zπ']] = n_h_zπ
@@ -342,6 +357,7 @@ def T_gcy2(w, shapes, params, arrays):
     indices_b = [1] * n
     indices_b[state_numbers['z_π']] = n_z_π
     #z_π_Q = np.reshape(z_π_Q, indices_a + indices_b)
+    z_π_Q = np.swapaxes(z_π_Q, 0, 1)
     z_π_Q= np.expand_dims(z_π_Q, (0,2,3,5,6,8,9,10,11))
 
     #breakpoint()
@@ -360,7 +376,11 @@ def T_gcy2(w, shapes, params, arrays):
     #                   'h_c'    : 3,
     #                   'h_zπ'   : 4,
     #                   'h_λ'    : 5}
-    print("line 363 z_Q", z_Q.shape, z_Q[1, 1, 1, 0])
+    z_Q = np.swapaxes(z_Q, 2, 3)
+    z_Q = np.swapaxes(z_Q, 1, 2)
+    z_Q = np.swapaxes(z_Q, 0, 1)
+    # changed to z_Q[i_z, i_z_π, i_h_z, i_h_zπ, j_z]
+    print("line 363 z_Q", z_Q.shape, z_Q[0, 1, 1, 1])
     z_Q = np.reshape(z_Q, indices_a + indices_b)
     #z_Q= np.expand_dims(z_Q, (3,5,7,8,9,10,11))
     print("line 366 z_Q", z_Q.shape, z_Q[0, 1, 1, 0, 1, 0, :,0,0,0,0,0])
@@ -484,7 +504,7 @@ def test_vectorized_equals_loops(shapes=(2, 2, 2, 2, 2, 2)):
     w = np.exp(np.random.randn(*shapes))  # Test operator at w
     w1 = T_gcy2(w, shapes, params, arrays)
     w2 = T_gcy_loops(w, shapes, params, arrays)
-    print(np.allclose(w1,w2), w1[0,1,1,0,1, 1], w2[0,1,1,0,1, 1])
+    print(np.allclose(w1,w2))
 
 
 def test_compute_wc_ratio_gcy(shapes=(3, 3, 3, 3, 3, 3), algo="successive_approx"):
