@@ -8,7 +8,6 @@ the GCY model.
 
 import numpy as np
 from numba import njit
-import pprint
 import jax
 import jax.numpy as jnp
 
@@ -19,7 +18,7 @@ from gcy_model import *
 sys.path.append('../..')
 from solvers import solver
 
-from quantecon import MarkovChain, rouwenhorst
+from quantecon import rouwenhorst
 
 # Optionally tell JAX to use 64 bit floats
 from jax.config import config

@@ -238,7 +238,3 @@ def test_compute_wc_ratio_ssy(shapes=(2, 3, 4, 5), algo="successive_approx"):
     print(f"Computed solution in {t} seconds.")
 
     return w_star
-
-
-
-test_vectorized_equals_loops()
