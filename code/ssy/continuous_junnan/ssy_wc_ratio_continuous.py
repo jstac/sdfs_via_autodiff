@@ -3,7 +3,7 @@ import jax.numpy as jnp
 import numpy as np
 from functools import partial
 from jax.config import config
-from utils import lin_interp, jit_map_coordinates, vals_to_coords
+from utils import lin_interp
 from quantecon.quad import qnwnorm
 
 import sys
@@ -52,15 +52,19 @@ def build_grid(ssy,
 
     return h_λ_grid, h_c_grid, h_z_grid, z_grid
 
+
 # ================================================= #
 # == State updates and simulation of state paths == #
 # ================================================= #
 
-
 def next_state(ssy_params, x, η_array):
-    """
-    Generate an array of states in the next period given current state
+    """Generate an array of states in the next period given current state
     x = (h_λ, h_c, h_z, z) and an array of shocks.
+
+    η_array: a jnp array of shape (4, N).
+
+    Return a jnp array of shape (4, N).
+
     """
     (β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ) = ssy_params
     h_λ, h_c, h_z, z = x
@@ -75,10 +79,9 @@ def next_state(ssy_params, x, η_array):
     return jnp.array([h_λ, h_c, h_z, z])
 
 
-# ================================================= #
-# == Evaluate operator T using Monte Carlo       == #
-# ================================================= #
-
+# ============================================= #
+# == Kernel for operator T using Monte Carlo == #
+# ============================================= #
 
 @partial(jax.vmap, in_axes=(0, None, None, None, None))
 def Kg_vmap_mc(x, ssy_params, g_vals, grids, mc_draws):
@@ -93,8 +96,7 @@ def Kg_vmap_mc(x, ssy_params, g_vals, grids, mc_draws):
     h_λ, h_c, h_z, z = x
     # Compute the constant term, given x, which doesn't require the new state.
     σ_c = ϕ_c * jnp.exp(h_c)
-    const = jnp.exp((1 - γ) * (μ_c + z) +
-                    (1/2) * (1 - γ)**2 * σ_c**2)
+    const = jnp.exp((1 - γ) * (μ_c + z) + (1/2) * (1 - γ)**2 * σ_c**2)
 
     # Ready to kick off the inner loop, which computes
     # E_x g(h_λ', h_c', h_z', z') exp(θ * h_λ')
@@ -112,108 +114,9 @@ def Kg_vmap_mc(x, ssy_params, g_vals, grids, mc_draws):
 Kg_vmap_mc = jax.jit(Kg_vmap_mc)
 
 
-def T_fun_factory(params, batch_size=10000):
-    """Function factory for operator T.
-
-    batch_size is the length of an array to map over in Kg_vmap. When the
-    state space is large, we need to divide it into batches. We use jax.vmap
-    for each batch and use jax.lax.map to loop over batches.
-
-    """
-    @jax.jit
-    def wc_operator_continuous(ssy_params, w_in, grids, mc_draws):
-        (β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ) = ssy_params
-        θ = (1-γ) / (1-(1/ψ))
-        h_λ_grid, h_c_grid, h_z_grid, z_grid = grids
-
-        # Get grid sizes
-        nh_λ = len(h_λ_grid)
-        nh_c = len(h_c_grid)
-        nh_z = len(h_z_grid)
-        nz = len(z_grid)
-
-        # Determine how many batches to create
-        n_batches = nh_λ * nh_c * nh_z * nz // batch_size
-
-        g_vals = w_in**θ
-
-        # Flatten and reshape the state space for computation
-        mesh_grids = jnp.meshgrid(*grids, indexing='ij')
-        # Each x_3d[i] is one batch with shape (batch_size, 4)
-        x_3d = jnp.stack([grid.ravel() for grid in mesh_grids],
-                         axis=1).reshape(n_batches, batch_size, 4)
-
-        def Kg_map_fun(x_array):
-            return Kg_vmap_mc(x_array, ssy_params, g_vals, grids, mc_draws)
-
-        # We loop over axis-0 of x_3d using Kg_map_fun, which applies Kg_vmap
-        # to each batch, and then reshape the results back.
-        Kg_out = jax.lax.map(Kg_map_fun, x_3d).reshape(nh_λ, nh_c, nh_z, nz)
-        w_out = 1 + β * Kg_out**(1/θ)
-
-        return w_out
-
-    @jax.jit
-    def T(w):
-        "T via JAX operations."
-        ssy_params, grids, mc_draws = params
-        w_out = wc_operator_continuous(ssy_params, w, grids, mc_draws)
-        return w_out
-
-    return T
-
-
-def wc_ratio_continuous(ssy, h_λ_grid_size=10, h_c_grid_size=10,
-                        h_z_grid_size=10, z_grid_size=20, num_std_devs=3.2,
-                        mc_draw_size=2000, w_init=None, seed=1234,
-                        ram_free=20, tol=1e-5, algorithm="successive_approx",
-                        verbose=True, print_skip=10, write_to_file=True,
-                        filename='w_star_data.npy'):
-    """
-    Iterate to convergence on the Koopmans operator associated with the SSY
-    model and then return the wealth consumption ratio.
-    """
-    ssy_params = jnp.array(ssy.params)
-    grids = build_grid(ssy, h_λ_grid_size, h_c_grid_size, h_z_grid_size,
-                       z_grid_size, num_std_devs)
-
-    # Generate shocks to evaluate the inner expectation
-    key = jax.random.PRNGKey(seed)
-    mc_draws = jax.random.normal(key, shape=(4, mc_draw_size))
-
-    if w_init is None:
-        w_init = jnp.ones(shape=(h_λ_grid_size, h_c_grid_size, h_z_grid_size,
-                                 z_grid_size))
-
-    # Determine batch_size using available GPU memory
-    state_size = h_λ_grid_size * h_c_grid_size * h_z_grid_size * z_grid_size
-    batch_size = ram_free * 30000000 // mc_draw_size
-    if state_size <= batch_size:
-        batch_size = state_size
-    else:
-        # This is to ensure n_batches is an integer
-        while (state_size % batch_size > 0):
-            batch_size -= 1
-
-    print("batch_size =", batch_size)
-
-    params = ssy_params, grids, mc_draws
-    T = T_fun_factory(params, batch_size=batch_size)
-    w_star = solver(T, w_init, algorithm=algorithm)
-
-    if write_to_file:
-        # Save results
-        with open(filename, 'wb') as f:
-            np.save(f, grids)
-            np.save(f, w_star)
-
-    return grids, w_star
-
-
-# ================================================== #
-# Evaluate operator T using Gauss-Hermite quadrature #
-# ================================================== #
-
+# ==========================================================#
+# == Kernel for operator T using Gauss-Hermite quadrature ==#
+# ==========================================================#
 
 @partial(jax.vmap, in_axes=(0, None, None, None, None, None))
 def Kg_vmap_quad(x, ssy_params, g_vals, grids, nodes, weights):
@@ -228,8 +131,7 @@ def Kg_vmap_quad(x, ssy_params, g_vals, grids, nodes, weights):
     h_λ, h_c, h_z, z = x
     # Compute the constant term, given x, which doesn't require the new state.
     σ_c = ϕ_c * jnp.exp(h_c)
-    const = jnp.exp((1 - γ) * (μ_c + z) +
-                    (1/2) * (1 - γ)**2 * σ_c**2)
+    const = jnp.exp((1 - γ) * (μ_c + z) + (1/2) * (1 - γ)**2 * σ_c**2)
 
     # Ready to kick off the inner loop, which computes
     # E_x g(h_λ', h_c', h_z', z') exp(θ * h_λ') using Gaussian quadrature:
@@ -247,7 +149,7 @@ def Kg_vmap_quad(x, ssy_params, g_vals, grids, nodes, weights):
 Kg_vmap_quad = jax.jit(Kg_vmap_quad)
 
 
-def T_fun_quad_factory(params, batch_size=10000):
+def T_fun_factory(params, method="quadrature", batch_size=10000):
     """Function factory for operator T.
 
     batch_size is the length of an array to map over in Kg_vmap. When the
@@ -255,57 +157,72 @@ def T_fun_quad_factory(params, batch_size=10000):
     for each batch and use jax.lax.map to loop over batches.
 
     """
+    ssy_params = params[0]
+    grids = params[1]
+    (β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ) = ssy_params
+    θ = (1-γ) / (1-(1/ψ))
+    h_λ_grid, h_c_grid, h_z_grid, z_grid = grids
 
-    @jax.jit
-    def wc_operator_continuous(ssy_params, w_in, grids, nodes, weights):
-        (β, γ, ψ, μ_c, ρ, ϕ_z, ϕ_c, ρ_z, ρ_c, ρ_λ, s_z, s_c, s_λ) = ssy_params
-        θ = (1-γ) / (1-(1/ψ))
-        h_λ_grid, h_c_grid, h_z_grid, z_grid = grids
+    # Get grid sizes
+    shape = [len(grid) for grid in grids]
 
-        # Get grid sizes
-        nh_λ = len(h_λ_grid)
-        nh_c = len(h_c_grid)
-        nh_z = len(h_z_grid)
-        nz = len(z_grid)
+    # Determine how many batches to create
+    n_batches = np.prod(shape) // batch_size
+    if np.prod(shape) % batch_size != 0:
+        raise ValueError("""Size of the state space cannot be evenly divided
+        by batch_size.""")
 
-        # Determine how many batches to create
-        n_batches = nh_λ * nh_c * nh_z * nz // batch_size
+    # Flatten and reshape the state space for computation
+    mesh_grids = jnp.meshgrid(*grids, indexing='ij')
+    # Each x_3d[i] is one batch with shape (batch_size, 4)
+    x_3d = jnp.stack([grid.ravel() for grid in mesh_grids],
+                     axis=1).reshape(n_batches, batch_size, 4)
 
-        g_vals = w_in**θ
-
-        # Flatten and reshape the state space for computation
-        mesh_grids = jnp.meshgrid(*grids, indexing='ij')
-        # Each x_3d[i] is one batch with shape (batch_size, 4)
-        x_3d = jnp.stack([grid.ravel() for grid in mesh_grids],
-                         axis=1).reshape(n_batches, batch_size, 4)
-
-        def Kg_map_fun(x_array):
-            return Kg_vmap_quad(x_array, ssy_params, g_vals, grids, nodes,
-                                weights)
-
-        # We loop over axis-0 of x_3d using Kg_map_fun, which applies Kg_vmap
-        # to each batch, and then reshape the results back.
-        Kg_out = jax.lax.map(Kg_map_fun, x_3d).reshape(nh_λ, nh_c, nh_z, nz)
-        w_out = 1 + β * Kg_out**(1/θ)
-
-        return w_out
-
-    @jax.jit
-    def T(w):
-        "T via JAX operations."
+    if method == "quadrature":
         ssy_params, grids, nodes, weights = params
-        w_out = wc_operator_continuous(ssy_params, w, grids, nodes, weights)
-        return w_out
+
+        @jax.jit
+        def T(w):
+            g_vals = w**θ
+
+            def Kg_map_fun(x_array):
+                return Kg_vmap_quad(x_array, ssy_params, g_vals, grids,
+                                    nodes, weights)
+
+            # We loop over axis-0 of x_3d using Kg_map_fun, which applies
+            # Kg_vmap to each batch, and then reshape the results back.
+            Kg_out = jax.lax.map(Kg_map_fun, x_3d).reshape(shape)
+            w_out = 1 + β * Kg_out**(1/θ)
+            return w_out
+
+    elif method == "monte_carlo":
+        ssy_params, grids, mc_draws = params
+
+        @jax.jit
+        def T(w):
+            g_vals = w**θ
+
+            def Kg_map_fun(x_array):
+                return Kg_vmap_mc(x_array, ssy_params, g_vals, grids,
+                                  mc_draws)
+
+            # We loop over axis-0 of x_3d using Kg_map_fun, which applies
+            # Kg_vmap to each batch, and then reshape the results back.
+            Kg_out = jax.lax.map(Kg_map_fun, x_3d).reshape(shape)
+            w_out = 1 + β * Kg_out**(1/θ)
+            return w_out
+    else:
+        raise KeyError("Method not found.")
 
     return T
 
 
-def wc_ratio_continuous_quad(ssy, h_λ_grid_size=10, h_c_grid_size=10,
-                             h_z_grid_size=10, z_grid_size=20,
-                             num_std_devs=3.2, d=5, w_init=None, ram_free=20,
-                             tol=1e-5, algorithm="successive_approx",
-                             verbose=True, print_skip=10, write_to_file=True,
-                             filename='w_star_data.npy'):
+def wc_ratio_continuous(ssy, h_λ_grid_size=10, h_c_grid_size=10,
+                        h_z_grid_size=10, z_grid_size=20, num_std_devs=3.2,
+                        d=5, mc_draw_size=2000, seed=1234, w_init=None,
+                        ram_free=20, tol=1e-5, method='quadrature',
+                        algorithm="successive_approx", verbose=True,
+                        write_to_file=True, filename='w_star_data.npy'):
     """
     Iterate to convergence on the Koopmans operator associated with the SSY
     model and then return the wealth consumption ratio.
@@ -314,29 +231,39 @@ def wc_ratio_continuous_quad(ssy, h_λ_grid_size=10, h_c_grid_size=10,
     grids = build_grid(ssy, h_λ_grid_size, h_c_grid_size, h_z_grid_size,
                        z_grid_size, num_std_devs)
 
-    # Calculate nodes and weights for Gauss-Hermite quadrature
-    nodes, weights = qnwnorm([d, d, d, d])
-    nodes = jnp.asarray(nodes.T)
-    weights = jnp.asarray(weights)
-
     if w_init is None:
         w_init = jnp.ones(shape=(h_λ_grid_size, h_c_grid_size, h_z_grid_size,
                                  z_grid_size))
 
-    # Determine batch_size using available GPU memory
-    state_size = h_λ_grid_size * h_c_grid_size * h_z_grid_size * z_grid_size
-    batch_size = ram_free * 30000000 // (weights.size * 2)
+    if method == 'quadrature':
+        # Calculate nodes and weights for Gauss-Hermite quadrature
+        nodes, weights = qnwnorm([d, d, d, d])
+        nodes = jnp.asarray(nodes.T)
+        weights = jnp.asarray(weights)
+        params = ssy_params, grids, nodes, weights
+
+        # Determine batch_size using available GPU memory
+        batch_size = ram_free * 30000000 // (weights.size * 2)
+    elif method == 'monte_carlo':
+        # Generate shocks to evaluate the inner expectation
+        key = jax.random.PRNGKey(seed)
+        mc_draws = jax.random.normal(key, shape=(4, mc_draw_size))
+        params = ssy_params, grids, mc_draws
+
+        batch_size = ram_free * 30000000 // mc_draw_size
+    else:
+        raise KeyError("Approximation method not found.")
+
+    # Choose the largest batch_size that evenly divides state_size
+    state_size = w_init.size
     if state_size <= batch_size:
         batch_size = state_size
     else:
-        # This is to ensure n_batches is an integer
         while (state_size % batch_size > 0):
             batch_size -= 1
-
     print("batch_size =", batch_size)
 
-    params = ssy_params, grids, nodes, weights
-    T = T_fun_quad_factory(params, batch_size=batch_size)
+    T = T_fun_factory(params, method, batch_size)
     w_star = solver(T, w_init, algorithm=algorithm)
 
     if write_to_file:
@@ -352,8 +279,8 @@ def wc_ratio_continuous_quad(ssy, h_λ_grid_size=10, h_c_grid_size=10,
 # == Build callables from data == #
 # =============================== #
 
-
-def construct_wstar_callable(datafile='w_star_data.npy'):
+def construct_wstar_callable(w_star_vals=None, grids=None,
+                             datafile='w_star_data.npy'):
     """
     Builds and returns a jitted callable that implements an approximation of
     the function w_star by linear interpolation over the grid.
@@ -362,15 +289,16 @@ def construct_wstar_callable(datafile='w_star_data.npy'):
 
     """
 
-    with open(datafile, 'rb') as f:
-        grids = np.load(f)
-        w_star_vals = np.load(f)
+    if w_star_vals is None or grids is None:
+        with open(datafile, 'rb') as f:
+            grids = np.load(f)
+            w_star_vals = np.load(f)
 
-    grids = jnp.asarray(grids)
-    w_star_vals = jnp.asarray(w_star_vals)
+        grids = jnp.asarray(grids)
+        w_star_vals = jnp.asarray(w_star_vals)
 
+    @jax.jit
     def w_star_func(x):
-        x_coord = vals_to_coords(grids, jnp.asarray(x).reshape(4, -1))
-        return jit_map_coordinates(w_star_vals, x_coord)
+        return lin_interp(x, w_star_vals, grids)
 
     return w_star_func

@@ -28,12 +28,12 @@ def vals_to_coords(grids, x_vals):
 
 
 @jax.jit
-def lin_interp(x, g_vals, grids):
-    """x: jnp array of shape (N, 4)"""
+def lin_interp(x, fun_vals, grids):
+    """x: jnp array of shape (4, N)"""
     coords = vals_to_coords(grids, x)
     # Interpolate using coordinates
-    next_g = jit_map_coordinates(g_vals, coords)
-    return next_g
+    interp_vals = jit_map_coordinates(fun_vals, coords)
+    return interp_vals
 
 
 # def lininterp_funcvals(ssy, function_vals):

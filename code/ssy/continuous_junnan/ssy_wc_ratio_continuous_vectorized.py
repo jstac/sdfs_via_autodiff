@@ -1,3 +1,5 @@
+## The vectorized version doesn't seem to offer any performance improvement
+## so let's ignore this file for now.
 import jax
 import jax.numpy as jnp
 import numpy as np
