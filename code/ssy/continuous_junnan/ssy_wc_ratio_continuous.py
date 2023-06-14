@@ -84,9 +84,9 @@ def next_state(ssy_params, x, η_array):
 # ============================================= #
 
 @partial(jax.vmap, in_axes=(0, None, None, None, None))
-def Kg_vmap_mc(x, ssy_params, g_vals, grids, mc_draws):
-    """Evaluate Hg(x) for one x using Monte Carlo, where g is given by g_vals
-    stored on grids.
+def Kg_vmap_mc(x, ssy_params, w_vals, grids, mc_draws):
+    """Evaluate Hg(x) for one x using Monte Carlo, where w_vals are
+    wealth-consumption ratios stored on grids.
 
     The function is vmap'd for parallel computation on the GPU.
 
@@ -103,8 +103,8 @@ def Kg_vmap_mc(x, ssy_params, g_vals, grids, mc_draws):
     next_x = next_state(ssy_params, x, mc_draws)
     pf = jnp.exp(next_x[0] * θ)
 
-    # Interpolate g(next_x) given g_vals:
-    next_g = lin_interp(next_x, g_vals, grids)
+    # Interpolate g(next_x) given w_vals:
+    next_g = lin_interp(next_x, w_vals, grids)**θ
 
     e_x = jnp.mean(next_g * pf)
     Kg = const * e_x
@@ -119,9 +119,9 @@ Kg_vmap_mc = jax.jit(Kg_vmap_mc)
 # ==========================================================#
 
 @partial(jax.vmap, in_axes=(0, None, None, None, None, None))
-def Kg_vmap_quad(x, ssy_params, g_vals, grids, nodes, weights):
-    """Evaluate Hg(x) for one x using Gauss-Hermite quadrature, where g is
-    given by g_vals stored on grids.
+def Kg_vmap_quad(x, ssy_params, w_vals, grids, nodes, weights):
+    """Evaluate Hg(x) for one x using Gauss-Hermite quadrature, where w_vals
+    are wealth-consumption ratios stored on grids.
 
     The function is vmap'd for parallel computation on the GPU.
 
@@ -138,8 +138,8 @@ def Kg_vmap_quad(x, ssy_params, g_vals, grids, nodes, weights):
     next_x = next_state(ssy_params, x, nodes)
     pf = jnp.exp(next_x[0] * θ)
 
-    # Interpolate g(next_x) given g_vals:
-    next_g = lin_interp(next_x, g_vals, grids)
+    # Interpolate g(next_x) given w_vals:
+    next_g = lin_interp(next_x, w_vals, grids)**θ
 
     e_x = jnp.dot(next_g*pf, weights)
     Kg = const * e_x
@@ -183,11 +183,9 @@ def T_fun_factory(params, method="quadrature", batch_size=10000):
 
         @jax.jit
         def T(w):
-            g_vals = w**θ
-
             def Kg_map_fun(x_array):
-                return Kg_vmap_quad(x_array, ssy_params, g_vals, grids,
-                                    nodes, weights)
+                return Kg_vmap_quad(x_array, ssy_params, w, grids, nodes,
+                                    weights)
 
             # We loop over axis-0 of x_3d using Kg_map_fun, which applies
             # Kg_vmap to each batch, and then reshape the results back.
@@ -200,11 +198,8 @@ def T_fun_factory(params, method="quadrature", batch_size=10000):
 
         @jax.jit
         def T(w):
-            g_vals = w**θ
-
             def Kg_map_fun(x_array):
-                return Kg_vmap_mc(x_array, ssy_params, g_vals, grids,
-                                  mc_draws)
+                return Kg_vmap_mc(x_array, ssy_params, w, grids, mc_draws)
 
             # We loop over axis-0 of x_3d using Kg_map_fun, which applies
             # Kg_vmap to each batch, and then reshape the results back.
