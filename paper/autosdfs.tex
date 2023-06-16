@@ -244,8 +244,8 @@
     \vspace{1em}
 
     \large
-    Chase Coleman\textsuperscript{a}, Pablo Levi\textsuperscript{b}, John
-    Stachurski\textsuperscript{c}, \\ Ole Wilms\textsuperscript{d} and Junnan Zhang\textsuperscript{e} \par \bigskip
+    Chase Coleman\textsuperscript{a}, John Stachurski\textsuperscript{c}, \\ Ole
+    Wilms\textsuperscript{d} and Junnan Zhang\textsuperscript{e} \par \bigskip
 
     \small
     \textsuperscript{a} Research School of Economics, Australian National University \\ 
@@ -280,11 +280,10 @@ pricing face the need to handle a growing list of state variables when trying to
 match existing theory to the data.  For example, while the seminal paper of
 \cite{bansal2004risks} used just two state variables to model the
 wealth-consumption ratio, subsequent work has added many features to the
-consumption side of this model.  A representative study,
-\cite{schorfheide2018identifying} adds preference shocks and an additional
-stochastic volatility term, leading to four state variables.
-\cite{gomez2021important} adds two more state variables to handle expectations
-of inflation.  
+consumption side of this model.  For example, \cite{schorfheide2018identifying}
+add preference shocks and an additional stochastic volatility term, leading to
+four state variables, while \cite{gomez2021important} use six to handle
+expectations of inflation.  
 
 To date, the standard method for handling these kinds of models has been
 log-linearization.  However, the underlying models are highly nonlinear and,
@@ -301,45 +300,57 @@ discount factors are very close to unity (e.g., 0.998 in
 Moreover, the consumption problem is typically embedded in a larger model with
 still more state variables, so fast and accurate solutions are essential.  
 
-In this paper we show how to rapidly approximate global solutions to the kinds
-of asset pricing models listed above using Newton--Kantorovich iteration backed
-by three features: automatic differentiation, just-in-time compilation and 
-execution on hardware accelerators such as GPUs. 
+In this paper we show how to efficiently approximate global solutions to the
+kinds of asset pricing models listed above using Newton--Kantorovich iteration
+backed by three features: automatic differentiation, just-in-time compilation
+and execution on hardware accelerators such as GPUs. We focus on computing the
+wealth-consumption ratio in the asset pricing models we consider, since this
+ratio is one of the key elements of the stochastic discount factor used to
+recover asset prices.  Typically, when log-linearization is avoided, calculating
+the wealth-consumption ratio is the most computationally intensive part of
+approximating the stochastic discount factor.
 
-To implement these feastures we use the software library JAX. 
+To implement the features listed above, we use JAX. JAX is
+scientific library within the Python ecosystem that provides data types,
+functions and a compiler for fast linear algebra operations, automatic
+differentiation, and automated GPU/TPU support via a just-in-time compiler.
+Initially developed in-house at Google,
+JAX is typically used for machine learning and AI, since it can scale to large
+data operations and automatically differentiate loss functions for gradient
+decent. However, JAX is sufficiently low-level that it can be used for many
+purposes, including asset pricing.
 
-\textcolor{DarkOrchid}{Short history of JAX, discussion of its capabilities.}
+Using Newton--Kantorovich iteration exploits several key features of JAX. First,
+automatic differentiation can be used to efficiently compute the Jacobian of the
+operator that defines the wealth-consumption ratio. Second, by switching
+Newton's method, rather than a more direct algorithm such as from successive
+approximation (i.e., fixed point iteration), we change the problem from many
+small iterations to a small number of computationally expensive ones. This
+offers greater opportunities for parallelized calculations. Third, JAX permits
+inversion of the Jacobian without actually instantiating the full Jacobian
+matrix.   This is essential for successfully solving high dimensional problems
+asset pricing problems.
 
-\textcolor{DarkOrchid}{Some explanation of what we achieve. Review of related
-literature.}
-
-\textcolor{DarkOrchid}{Some benefits of our method. 
-    \begin{itemize}
-        \item We can potentially differentiate the fixed point with respect to the
-            parameters. These gradients help us how the SDF and WC ratio respond
-            to shifts in underlying parameters.  They can also provide Jacobians
-            for gradient decent.
-        \item Autodiff means it's possible to plug other fixed point operators, associated with
-            other specifications of recursive utility, directly into the code.
-            There's no need to compute gradients in each case.
-        \item By switching from successive approximation to Newton's method, using
-            autodifferentiation to compute the Jacobian, we change the problem
-            from many small iterations to a small number of computationally
-            expensive ones, which offer better opportunities for parallelization. 
-        \item Autodifferentiation is important here, as compared to numerical
-            derivatives, since convergence is fragile for this operator (very slow
-            rate of convergence).
-        \item JAX allows us to invert the Jacobian without actually instantiating
-            the full Jacobian matrix.   This is a key feature for successfully
-            solving high dimensional problems. 
-    \end{itemize}
-}
+We also note that automatic differentiation offers the following important
+advantage: compared to numerical derivatives, exact derivatives from automatic
+differentiation are more accurate.  This is matters because discount rates are
+very low (i.e., discount factors are very close to unity), which makes
+convergence is fragile.  
 
 
-\section{Asset Pricing Background}
+\textcolor{DarkOrchid}{TODO.  Complete once all experiments are done.  Provide
+some explanation of what we achieve. Review of related literature.}
 
-In this section we introduce the model and then progress to stating the
-functional equation for the wealth-consumption ration.
+
+
+
+\section{Set Up}
+
+In this section we introduce the model and progress to stating the
+functional equation for the wealth-consumption ration.  Then we outline the
+Newton--Kantorovich iteration scheme.
+
+\subsection{The Wealth-Consumption Ratio}
 
 In discrete-time no-arbitrage environments, the equilibrium price process
 $\{P_t\}_{t \geq 0}$ associated with a cash flow $\{G_t\}_{t \geq 1}$ obeys
@@ -421,33 +432,67 @@ Let $\HH$ be the linear operator defined by
 \end{equation}
 %
 at each $x \in \XX$,  where $\EE_x$ conditions on $X_t = x$.  With this notation
-we can now write the equation for the wealth-consumption ratio as
-%
-\begin{equation}
-    (w(x)-1)^\theta
+we can write the equation for the wealth-consumption ratio as
+    $(w(x)-1)^\theta
     = \beta^{\theta}
     \left[
         (\HH w)(x)^\theta
-    \right].
-    \label{eq:wcnt}
-\end{equation}
-%
+    \right]$.
 Rearranging once more gives the functional equation
 %
-\begin{equation}
+\begin{equation}\label{eq:fe}
     w = 1 + \beta ( \HH w^\theta )^{1/\theta}.
-    \label{eq:fe}
 \end{equation}
 %
-A function $w$ solves this equation if and only if $w$ is a fixed point
-of the operator $\TT$ defined by 
+\cite{stachurski2022unique} show that, under mild conditions, \eqref{eq:fe} has
+a unique solution $w^*$ in the space of continuous everywhere positive functions
+on $\XX$ if and only if $r(\HH)^{1/\theta} < 1$, where $r(\HH)$ is the spectral radius
+of the operator $\HH$.  This condition is satisfied in the models we consider.
+
+
+
+\subsection{Solution Methods}
+
+A function $w$ solves \eqref{eq:fe} if and only if $w$ is a fixed point
+of the (nonlinear) operator $\TT$ defined by 
 %
 \begin{equation}\label{eq:wcop}
     \TT w = 1 + \beta \,  (\HH w^\theta)^{1/\theta}.
 \end{equation}
 %
+\cite{stachurski2022unique} also show that, under the same spectral radius condition
+$r(\HH)^{1/\theta} < 1$ and with $w^*$ denoting the unique fixed point of $\TT$,
+the convergence $\lim_{k \to \infty} \| \TT^k w - w^*\|_\infty = 0$ holds for any
+strictly positive initial condition $w$, where $\| \cdot \|_\infty$ is the
+supremum norm. Hence successive approximation (i.e., iteration with $\TT$)
+provides one reliable and globally convergent method for computing $w^*$.
+
+However, successive approximation is typically slow, since (a) in these models, the
+discount factor is very close to unity, and (b) successive approximation is
+inherently sequential and offers relatively limited opportunities for
+parallelization.  For this reason we focus instead on Newton--Kantorovich
+iteration,  
+
+Background on Newton's algorithm in $\RR^N$.  Let $f$ be a smooth map from
+$\RR^N$ to itself.  We want to find the $x \in \RR^N$ that solves $f(x)=x$.
+Ordinary successive approximation uses
+%
+\begin{equation}
+    x_{k+1} = f(x_k)
+\end{equation}
+%
+Newton's method first sets $g(x) = f(x) -x$, so that we are seeking a root $x$
+satisfying $g(x)=0$, and then iterates on
+%
+\begin{equation}
+    x_{k+1} = g(x_k) + J(x_k)^{-1} g(x_k)
+\end{equation}
+%
+where $J(x)$ is the Jacobian of $g$ at $x$.
 
 
+
+\section{Applications}
 
 \subsection{Example: The SSY Case}
 
@@ -598,23 +643,6 @@ again. The baseline parameter values can be found in the code repository.
 
 \section{Solution Method}
 
-Background on Newton's algorithm in $\RR^N$.  Let $f$ be a smooth map from
-$\RR^N$ to itself.  We want to find the $x \in \RR^N$ that solves $f(x)=x$.
-Ordinary successive approximation uses
-%
-\begin{equation}
-    x_{k+1} = f(x_k)
-\end{equation}
-%
-Newton's method first sets $g(x) = f(x) -x$, so that we are seeking a root $x$
-satisfying $g(x)=0$, and then iterates on
-%
-\begin{equation}
-    x_{k+1} = g(x_k) + J(x_k)^{-1} g(x_k)
-\end{equation}
-%
-where $J(x)$ is the Jacobian of $g$ at $x$.
-
 
 \subsection{Discretization}
 
@@ -647,6 +675,16 @@ fixed point of
 in the set of strictly positive vectors in $\RR^N$.
 
 
+\section{Conclusion}
+
+TODO describe outcomes.
+
+One research avenue we have not explored here is that one can potentially
+differentiate the fixed point with respect to the parameters using automatic
+differentiation. These gradients are helpful to study how the wealth-consumption
+ratio and stochastic discount factor respond to shifts in underlying parameters,
+as well as providing Jacobians for gradient decent in estimation problems.
+We leave these topics for future work.
 
 
 
