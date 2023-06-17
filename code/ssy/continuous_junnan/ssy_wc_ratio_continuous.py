@@ -255,8 +255,12 @@ def wc_ratio_continuous(ssy, h_λ_grid_size=10, h_c_grid_size=10,
     if state_size <= batch_size:
         batch_size = state_size
     else:
-        while (state_size % batch_size > 0):
-            batch_size -= 1
+        max_div = 1
+        for i in range(2, np.sqrt(state_size) + 1):
+            if state_size % i == 0:
+                max_div = max(max_div, i)
+                max_div = max(max_div, state_size//i)
+        batch_size = max_div
     print("batch_size =", batch_size)
 
     T = T_fun_factory(params, method, batch_size)
