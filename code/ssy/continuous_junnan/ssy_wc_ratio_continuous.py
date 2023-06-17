@@ -57,6 +57,7 @@ def build_grid(ssy,
 # == State updates and simulation of state paths == #
 # ================================================= #
 
+@jax.jit
 def next_state(ssy_params, x, η_array):
     """Generate an array of states in the next period given current state
     x = (h_λ, h_c, h_z, z) and an array of shocks.

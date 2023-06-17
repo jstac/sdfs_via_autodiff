@@ -3,27 +3,14 @@ import jax.numpy as jnp
 
 # == Interpolation related utilities == #
 
-
 @jax.jit
-def jit_map_coordinates(vals, coords):
-    return jax.scipy.ndimage.map_coordinates(vals, coords, order=1,
-                                             mode='nearest')
-
-
 def vals_to_coords(grids, x_vals):
     """Transform values of the states to corresponding coordinates (array
     indices) on the grids.
 
     """
-    # jax.jit doesn't allow dynamic shapes so we hard code its dimension
-    dim = 4
-
-    intervals = jnp.asarray([grid[1] - grid[0] for grid in grids])
-    low_bounds = jnp.asarray([grid[0] for grid in grids])
-
-    intervals = intervals.reshape(dim, 1)
-    low_bounds = low_bounds.reshape(dim, 1)
-
+    intervals = jnp.asarray([grid[1] - grid[0] for grid in grids]).reshape(-1, 1)
+    low_bounds = jnp.asarray([grid[0] for grid in grids]).reshape(-1, 1)
     return (x_vals - low_bounds) / intervals
 
 
@@ -32,8 +19,8 @@ def lin_interp(x, fun_vals, grids):
     """x: jnp array of shape (4, N)"""
     coords = vals_to_coords(grids, x)
     # Interpolate using coordinates
-    interp_vals = jit_map_coordinates(fun_vals, coords)
-    return interp_vals
+    return jax.scipy.ndimage.map_coordinates(fun_vals, coords, order=1,
+                                             mode='nearest')
 
 
 # def lininterp_funcvals(ssy, function_vals):
