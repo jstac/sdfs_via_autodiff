@@ -5,8 +5,11 @@ from functools import partial
 from jax.config import config
 from utils import lin_interp
 from quantecon.quad import qnwnorm
+import time
 
 import sys
+sys.path.append('..')
+from ssy_model import *
 sys.path.append('../..')
 from solvers import solver
 
@@ -302,3 +305,48 @@ def construct_wstar_callable(w_star_vals=None, grids=None,
         return lin_interp(x, w_star_vals, grids)
 
     return w_star_func
+
+
+# Test T
+def compare_T_factories(T_fact_old, T_fact_new, seed=1234):
+    """Compare the results and speed of two function factories for T"""
+    ssy = SSY()
+    zs, hzs, hcs, hλs = 3, 4, 5, 6
+    std_devs = 3.0
+
+    ssy_params = jnp.array(ssy.params)
+    grids = build_grid(ssy, hλs, hcs, hzs, zs, std_devs)
+
+    d = 4
+    nodes, weights = qnwnorm([d, d, d, d])
+    nodes = jnp.asarray(nodes.T)
+    weights = jnp.asarray(weights)
+
+    state_size = hλs * hcs * hzs * zs
+    batch_size = state_size
+
+    params_quad = ssy_params, grids, nodes, weights
+
+    T_old = T_fact_old(params_quad, 'quadrature', batch_size)
+    T_new = T_fact_new(params_quad, 'quadrature', batch_size)
+
+    # Run them once to compile
+    w0 = jnp.zeros((zs, hzs, hcs, hλs))
+    T_old(w0)
+    T_new(w0)
+
+    key = jax.random.PRNGKey(seed)
+    w0 = jax.random.uniform(key, shape=(zs, hzs, hcs, hλs))
+
+    t0 = time.time()
+    w1_old = T_old(w0)
+    t1 = time.time()
+    t_old = 1000*(t1 - t0)
+
+    t0 = time.time()
+    w1_new = T_new(w0)
+    t1 = time.time()
+    t_new = 1000*(t1 - t0)
+
+    print("Speed comparison: {:.4f}ms vs {:.4f}ms".format(t_old, t_new))
+    print("Same results? {}".format(jnp.allclose(w1_old, w1_new)))
