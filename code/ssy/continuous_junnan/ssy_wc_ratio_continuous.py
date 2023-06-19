@@ -176,7 +176,7 @@ def T_fun_factory(params, method="quadrature", batch_size=10000):
         raise ValueError("""Size of the state space cannot be evenly divided
         by batch_size.""")
 
-    dim = total_size // (n_batches * batch_size)
+    dim = len(grids)
     # Flatten and reshape the state space for computation
     mesh_grids = jnp.meshgrid(*grids, indexing='ij')
     # Each x_3d[i] is one batch with shape (batch_size, dim)
