@@ -5,8 +5,11 @@ from functools import partial
 from jax.config import config
 from utils import lin_interp
 from quantecon.quad import qnwnorm
+import time
 
 import sys
+sys.path.append('..')
+from ssy_model import *
 sys.path.append('../..')
 from solvers import solver
 
@@ -57,6 +60,7 @@ def build_grid(ssy,
 # == State updates and simulation of state paths == #
 # ================================================= #
 
+@jax.jit
 def next_state(ssy_params, x, η_array):
     """Generate an array of states in the next period given current state
     x = (h_λ, h_c, h_z, z) and an array of shocks.
@@ -165,18 +169,19 @@ def T_fun_factory(params, method="quadrature", batch_size=10000):
 
     # Get grid sizes
     shape = [len(grid) for grid in grids]
-
+    total_size = np.prod(shape)
     # Determine how many batches to create
-    n_batches = np.prod(shape) // batch_size
-    if np.prod(shape) % batch_size != 0:
+    n_batches = total_size // batch_size
+    if total_size % batch_size != 0:
         raise ValueError("""Size of the state space cannot be evenly divided
         by batch_size.""")
 
+    dim = len(grids)
     # Flatten and reshape the state space for computation
     mesh_grids = jnp.meshgrid(*grids, indexing='ij')
-    # Each x_3d[i] is one batch with shape (batch_size, 4)
+    # Each x_3d[i] is one batch with shape (batch_size, dim)
     x_3d = jnp.stack([grid.ravel() for grid in mesh_grids],
-                     axis=1).reshape(n_batches, batch_size, 4)
+                     axis=1).reshape(n_batches, batch_size, dim)
 
     if method == "quadrature":
         ssy_params, grids, nodes, weights = params
@@ -225,14 +230,14 @@ def wc_ratio_continuous(ssy, h_λ_grid_size=10, h_c_grid_size=10,
     ssy_params = jnp.array(ssy.params)
     grids = build_grid(ssy, h_λ_grid_size, h_c_grid_size, h_z_grid_size,
                        z_grid_size, num_std_devs)
-
+    dim = len(grids)
     if w_init is None:
         w_init = jnp.ones(shape=(h_λ_grid_size, h_c_grid_size, h_z_grid_size,
                                  z_grid_size))
 
     if method == 'quadrature':
         # Calculate nodes and weights for Gauss-Hermite quadrature
-        nodes, weights = qnwnorm([d, d, d, d])
+        nodes, weights = qnwnorm([d]*dim)
         nodes = jnp.asarray(nodes.T)
         weights = jnp.asarray(weights)
         params = ssy_params, grids, nodes, weights
@@ -242,7 +247,7 @@ def wc_ratio_continuous(ssy, h_λ_grid_size=10, h_c_grid_size=10,
     elif method == 'monte_carlo':
         # Generate shocks to evaluate the inner expectation
         key = jax.random.PRNGKey(seed)
-        mc_draws = jax.random.normal(key, shape=(4, mc_draw_size))
+        mc_draws = jax.random.normal(key, shape=(dim, mc_draw_size))
         params = ssy_params, grids, mc_draws
 
         batch_size = ram_free * 30000000 // mc_draw_size
@@ -254,8 +259,15 @@ def wc_ratio_continuous(ssy, h_λ_grid_size=10, h_c_grid_size=10,
     if state_size <= batch_size:
         batch_size = state_size
     else:
-        while (state_size % batch_size > 0):
-            batch_size -= 1
+        max_div = 1
+        for i in range(1, int(np.sqrt(state_size)) + 1):
+            if state_size % i == 0:
+                if i <= batch_size:
+                    max_div = max(max_div, i)
+                z = state_size//i
+                if z <= batch_size:
+                    max_div = max(max_div, z)
+        batch_size = max_div
     print("batch_size =", batch_size)
 
     T = T_fun_factory(params, method, batch_size)
@@ -297,3 +309,48 @@ def construct_wstar_callable(w_star_vals=None, grids=None,
         return lin_interp(x, w_star_vals, grids)
 
     return w_star_func
+
+
+# Test T
+def compare_T_factories(T_fact_old, T_fact_new, seed=1234):
+    """Compare the results and speed of two function factories for T"""
+    ssy = SSY()
+    zs, hzs, hcs, hλs = 3, 4, 5, 6
+    std_devs = 3.0
+
+    ssy_params = jnp.array(ssy.params)
+    grids = build_grid(ssy, hλs, hcs, hzs, zs, std_devs)
+
+    d = 4
+    nodes, weights = qnwnorm([d, d, d, d])
+    nodes = jnp.asarray(nodes.T)
+    weights = jnp.asarray(weights)
+
+    state_size = hλs * hcs * hzs * zs
+    batch_size = state_size
+
+    params_quad = ssy_params, grids, nodes, weights
+
+    T_old = T_fact_old(params_quad, 'quadrature', batch_size)
+    T_new = T_fact_new(params_quad, 'quadrature', batch_size)
+
+    # Run them once to compile
+    w0 = jnp.zeros((zs, hzs, hcs, hλs))
+    T_old(w0)
+    T_new(w0)
+
+    key = jax.random.PRNGKey(seed)
+    w0 = jax.random.uniform(key, shape=(zs, hzs, hcs, hλs))
+
+    t0 = time.time()
+    w1_old = T_old(w0)
+    t1 = time.time()
+    t_old = 1000*(t1 - t0)
+
+    t0 = time.time()
+    w1_new = T_new(w0)
+    t1 = time.time()
+    t_new = 1000*(t1 - t0)
+
+    print("Speed comparison: {:.4f}ms vs {:.4f}ms".format(t_old, t_new))
+    print("Same results? {}".format(jnp.allclose(w1_old, w1_new)))
