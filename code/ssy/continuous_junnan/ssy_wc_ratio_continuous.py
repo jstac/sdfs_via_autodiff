@@ -169,18 +169,19 @@ def T_fun_factory(params, method="quadrature", batch_size=10000):
 
     # Get grid sizes
     shape = [len(grid) for grid in grids]
-
+    total_size = np.prod(shape)
     # Determine how many batches to create
-    n_batches = np.prod(shape) // batch_size
-    if np.prod(shape) % batch_size != 0:
+    n_batches = total_size // batch_size
+    if total_size % batch_size != 0:
         raise ValueError("""Size of the state space cannot be evenly divided
         by batch_size.""")
 
+    dim = total_size // (n_batches * batch_size)
     # Flatten and reshape the state space for computation
     mesh_grids = jnp.meshgrid(*grids, indexing='ij')
-    # Each x_3d[i] is one batch with shape (batch_size, 4)
+    # Each x_3d[i] is one batch with shape (batch_size, dim)
     x_3d = jnp.stack([grid.ravel() for grid in mesh_grids],
-                     axis=1).reshape(n_batches, batch_size, 4)
+                     axis=1).reshape(n_batches, batch_size, dim)
 
     if method == "quadrature":
         ssy_params, grids, nodes, weights = params
@@ -229,14 +230,14 @@ def wc_ratio_continuous(ssy, h_λ_grid_size=10, h_c_grid_size=10,
     ssy_params = jnp.array(ssy.params)
     grids = build_grid(ssy, h_λ_grid_size, h_c_grid_size, h_z_grid_size,
                        z_grid_size, num_std_devs)
-
+    dim = len(grids)
     if w_init is None:
         w_init = jnp.ones(shape=(h_λ_grid_size, h_c_grid_size, h_z_grid_size,
                                  z_grid_size))
 
     if method == 'quadrature':
         # Calculate nodes and weights for Gauss-Hermite quadrature
-        nodes, weights = qnwnorm([d, d, d, d])
+        nodes, weights = qnwnorm([d]*dim)
         nodes = jnp.asarray(nodes.T)
         weights = jnp.asarray(weights)
         params = ssy_params, grids, nodes, weights
@@ -246,7 +247,7 @@ def wc_ratio_continuous(ssy, h_λ_grid_size=10, h_c_grid_size=10,
     elif method == 'monte_carlo':
         # Generate shocks to evaluate the inner expectation
         key = jax.random.PRNGKey(seed)
-        mc_draws = jax.random.normal(key, shape=(4, mc_draw_size))
+        mc_draws = jax.random.normal(key, shape=(dim, mc_draw_size))
         params = ssy_params, grids, mc_draws
 
         batch_size = ram_free * 30000000 // mc_draw_size
