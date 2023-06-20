@@ -177,11 +177,14 @@ def T_fun_factory(params, method="quadrature", batch_size=10000):
         by batch_size.""")
 
     dim = len(grids)
-    # Flatten and reshape the state space for computation
-    mesh_grids = jnp.meshgrid(*grids, indexing='ij')
-    # Each x_3d[i] is one batch with shape (batch_size, dim)
-    x_3d = jnp.stack([grid.ravel() for grid in mesh_grids],
-                     axis=1).reshape(n_batches, batch_size, dim)
+
+    def get_x_3d(grids, n_batches, batch_size):
+        """Flatten and reshape the state space for computation"""
+        mesh_grids = jnp.meshgrid(*grids, indexing='ij')
+        # Each x_3d[i] is one batch with shape (batch_size, dim)
+        x_3d = jnp.stack([grid.ravel() for grid in mesh_grids],
+                         axis=1).reshape(n_batches, batch_size, dim)
+        return x_3d
 
     if method == "quadrature":
         ssy_params, grids, nodes, weights = params
@@ -191,6 +194,9 @@ def T_fun_factory(params, method="quadrature", batch_size=10000):
             def Kg_map_fun(x_array):
                 return Kg_vmap_quad(x_array, ssy_params, w, grids, nodes,
                                     weights)
+
+            # Run this inside T for faster compilation time (why?)
+            x_3d = get_x_3d(grids, n_batches, batch_size)
 
             # We loop over axis-0 of x_3d using Kg_map_fun, which applies
             # Kg_vmap to each batch, and then reshape the results back.
@@ -205,6 +211,9 @@ def T_fun_factory(params, method="quadrature", batch_size=10000):
         def T(w):
             def Kg_map_fun(x_array):
                 return Kg_vmap_mc(x_array, ssy_params, w, grids, mc_draws)
+
+            # Run this inside T for faster compilation time (why?)
+            x_3d = get_x_3d(grids, n_batches, batch_size)
 
             # We loop over axis-0 of x_3d using Kg_map_fun, which applies
             # Kg_vmap to each batch, and then reshape the results back.
@@ -311,11 +320,12 @@ def construct_wstar_callable(w_star_vals=None, grids=None,
     return w_star_func
 
 
-# Test T
-def compare_T_factories(T_fact_old, T_fact_new, seed=1234):
+#
+def compare_T_factories(T_fact_old, T_fact_new, shape=(5, 6, 7, 8),
+                        seed=1234, n=100):
     """Compare the results and speed of two function factories for T"""
     ssy = SSY()
-    zs, hzs, hcs, hλs = 3, 4, 5, 6
+    hλs, hcs, hzs, zs = shape
     std_devs = 3.0
 
     ssy_params = jnp.array(ssy.params)
@@ -326,7 +336,7 @@ def compare_T_factories(T_fact_old, T_fact_new, seed=1234):
     nodes = jnp.asarray(nodes.T)
     weights = jnp.asarray(weights)
 
-    state_size = hλs * hcs * hzs * zs
+    state_size = np.prod(shape)
     batch_size = state_size
 
     params_quad = ssy_params, grids, nodes, weights
@@ -334,23 +344,103 @@ def compare_T_factories(T_fact_old, T_fact_new, seed=1234):
     T_old = T_fact_old(params_quad, 'quadrature', batch_size)
     T_new = T_fact_new(params_quad, 'quadrature', batch_size)
 
+    print("----- Testing the Operator T -----")
     # Run them once to compile
-    w0 = jnp.zeros((zs, hzs, hcs, hλs))
+    w0 = jnp.zeros((shape))
+    t0 = time.time()
     T_old(w0)
-    T_new(w0)
+    t1 = time.time()
 
-    key = jax.random.PRNGKey(seed)
-    w0 = jax.random.uniform(key, shape=(zs, hzs, hcs, hλs))
+    comp_time_old = (t1 - t0)*1000
 
     t0 = time.time()
-    w1_old = T_old(w0)
+    T_new(w0)
+    t1 = time.time()
+
+    comp_time_new = (t1 - t0)*1000
+
+    print("Compilation time: {:.4f}ms vs {:.4f}ms".format(comp_time_old,
+                                                          comp_time_new))
+
+    key = jax.random.PRNGKey(seed)
+    w0_array = jax.random.uniform(key, shape=(n, hλs, hcs, hzs, zs))
+
+    t0 = time.time()
+    w1_old_list = []
+    for i in range(n):
+        w1_old_list.append(T_old(w0_array[i]))
     t1 = time.time()
     t_old = 1000*(t1 - t0)
 
     t0 = time.time()
-    w1_new = T_new(w0)
+    w1_new_list = []
+    for i in range(n):
+        w1_new_list.append(T_new(w0_array[i]))
     t1 = time.time()
     t_new = 1000*(t1 - t0)
 
-    print("Speed comparison: {:.4f}ms vs {:.4f}ms".format(t_old, t_new))
-    print("Same results? {}".format(jnp.allclose(w1_old, w1_new)))
+    comparison_result = jnp.asarray([jnp.allclose(*w1) for w1 in
+                                     zip(w1_old_list, w1_new_list)])
+
+    print("Speed comparison for {} runs: {:.4f}ms vs {:.4f}ms".format(n,
+                                                                      t_old,
+                                                                      t_new))
+    print("Same results? {}".format(jnp.all(comparison_result)))
+
+    print("\n----- Testing Newton's Method -----")
+
+    # Generate the function for Newton's method
+    def gen_newton_fun(f):
+        def g(x): return f(x) - x
+
+        @jax.jit
+        def q(x):
+            # First we define the map v -> J(x) v from x and g
+            jac_x_prod = lambda v: jax.jvp(g, (x,), (v,))[1]
+            # Next we compute J(x)^{-1} g(x).  Currently we use
+            # sparse.linalg.bicgstab. Another option is sparse.linalg.bc
+            # but this operation seems to be less stable.
+            b = jax.scipy.sparse.linalg.bicgstab(
+                    jac_x_prod, g(x),
+                    atol=1e-4)[0]
+            return x - b
+        return q
+
+    T_newton_old = gen_newton_fun(T_old)
+    T_newton_new = gen_newton_fun(T_new)
+
+    t0 = time.time()
+    T_newton_old(w0)
+    t1 = time.time()
+
+    comp_newton_time_old = (t1 - t0)
+
+    t0 = time.time()
+    T_newton_new(w0)
+    t1 = time.time()
+
+    comp_newton_time_new = (t1 - t0)
+
+    print("Compilation time: {:.4f}s vs {:.4f}s".format(comp_newton_time_old,
+                                                        comp_newton_time_new))
+
+    m = int(n/50)
+    t0 = time.time()
+    w1_old_list = []
+    for i in range(m):
+        w1_old_list.append(T_newton_old(w0_array[i]))
+    t1 = time.time()
+    t_old = t1 - t0
+
+    t0 = time.time()
+    w1_new_list = []
+    for i in range(m):
+        w1_new_list.append(T_newton_new(w0_array[i]))
+    t1 = time.time()
+    t_new = t1 - t0
+
+    print("Speed comparison for {} runs: {:.4f}s vs {:.4f}s".format(m, t_old,
+                                                                    t_new))
+    comparison_result = jnp.asarray([jnp.allclose(*w1) for w1 in
+                                     zip(w1_old_list, w1_new_list)])
+    print("Same results? {}".format(jnp.all(comparison_result)))
