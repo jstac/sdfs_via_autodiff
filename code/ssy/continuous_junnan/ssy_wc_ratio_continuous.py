@@ -244,6 +244,11 @@ def wc_ratio_continuous(ssy, h_λ_grid_size=10, h_c_grid_size=10,
         w_init = jnp.ones(shape=(h_λ_grid_size, h_c_grid_size, h_z_grid_size,
                                  z_grid_size))
 
+    if algorithm == 'newton':
+        scale = 8
+    else:
+        scale = 1
+
     if method == 'quadrature':
         # Calculate nodes and weights for Gauss-Hermite quadrature
         nodes, weights = qnwnorm([d]*dim)
@@ -251,18 +256,19 @@ def wc_ratio_continuous(ssy, h_λ_grid_size=10, h_c_grid_size=10,
         weights = jnp.asarray(weights)
         params = ssy_params, grids, nodes, weights
 
-        # Determine batch_size using available GPU memory
-        batch_size = ram_free * 30000000 // (weights.size * 2)
+        sim_size = weights.size
     elif method == 'monte_carlo':
         # Generate shocks to evaluate the inner expectation
         key = jax.random.PRNGKey(seed)
         mc_draws = jax.random.normal(key, shape=(dim, mc_draw_size))
         params = ssy_params, grids, mc_draws
 
-        batch_size = ram_free * 30000000 // mc_draw_size
+        sim_size = mc_draw_size
     else:
         raise KeyError("Approximation method not found.")
 
+    # Determine batch_size based on available GPU memory
+    batch_size = (ram_free * 1024**3 // 14) // (dim * sim_size * scale)
     # Choose the largest batch_size that evenly divides state_size
     state_size = w_init.size
     if state_size <= batch_size:

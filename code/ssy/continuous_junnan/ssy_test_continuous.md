@@ -13,7 +13,7 @@ kernelspec:
 ---
 
 ```{code-cell} ipython3
-# %env CUDA_VISIBLE_DEVICES=1
+%env CUDA_VISIBLE_DEVICES=1
 ```
 
 ```{code-cell} ipython3
@@ -117,7 +117,7 @@ grids, out = wc_ratio_continuous(ssy, h_λ_grid_size=hλs, h_c_grid_size=hcs,
 
 grids, out = wc_ratio_continuous(ssy, h_λ_grid_size=hλs, h_c_grid_size=hcs, 
                                 h_z_grid_size=hzs, z_grid_size=zs, 
-                                num_std_devs=std_devs, d=5, method='quadrature',
+                                num_std_devs=std_devs, d=7, method='quadrature',
                                 w_init=w_init, ram_free=20, tol=1e-5, algorithm="anderson", 
                                 write_to_file=True, filename='w_star_data.npy')
 ```
@@ -129,7 +129,7 @@ grids, out = wc_ratio_continuous(ssy, h_λ_grid_size=hλs, h_c_grid_size=hcs,
 
 grids, out = wc_ratio_continuous(ssy, h_λ_grid_size=hλs, h_c_grid_size=hcs, 
                                 h_z_grid_size=hzs, z_grid_size=zs, 
-                                num_std_devs=std_devs, d=5, method='quadrature',
+                                num_std_devs=std_devs, d=7, method='quadrature',
                                 w_init=w_init, ram_free=20, tol=1e-5, algorithm="newton", 
                                 write_to_file=True, filename='w_star_data.npy')
 ```
