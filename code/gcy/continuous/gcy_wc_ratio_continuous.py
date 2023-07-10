@@ -16,14 +16,16 @@ from solvers import solver
 # Tell JAX to use 64 bit floats
 config.update("jax_enable_x64", True)
 
-# n_z, n_z_π, n_h_z, n_h_c, n_h_zπ, n_h_λ
+# order:
+# h_λ_grid, h_c_grid, h_z_grid, h_zπ_grid, z_grid, zπ_grid
+
 def build_grid(gcy,
                h_λ_grid_size,
                h_c_grid_size,
                h_z_grid_size,
+               h_zπ_grid_size,
                z_grid_size,
                z_π_grid_size,
-               h_zπ_grid_size,
                num_std_devs=3.2):
     """Build a grid over the tuple (h_λ_vec, h_c_vec, h_z_vec, z_vec) for
     linear interpolation.
@@ -259,8 +261,8 @@ def T_fun_factory(params, method="quadrature", batch_size=10000):
 
 
 def wc_ratio_continuous(gcy, h_λ_grid_size=10, h_c_grid_size=10,
-                        h_z_grid_size=10, z_grid_size=20, z_π_grid_size=20,
-                        h_zπ_grid_size=10, num_std_devs=3.2,
+                        h_z_grid_size=10, h_zπ_grid_size=10, z_grid_size=20,
+                        z_π_grid_size=20, num_std_devs=3.2,
                         d=5, mc_draw_size=2000, seed=1234, w_init=None,
                         ram_free=20, tol=1e-5, method='quadrature',
                         algorithm="successive_approx", verbose=True,
@@ -271,7 +273,7 @@ def wc_ratio_continuous(gcy, h_λ_grid_size=10, h_c_grid_size=10,
     """
     gcy_params = jnp.array(gcy.params)
     grids = build_grid(gcy, h_λ_grid_size, h_c_grid_size, h_z_grid_size,
-                       z_grid_size, z_π_grid_size, h_zπ_grid_size, num_std_devs)
+                       h_zπ_grid_size, z_grid_size, z_π_grid_size, num_std_devs)
     dim = len(grids)
     # h_λ, h_c, h_z, h_zπ, z, z_π = x
     if w_init is None:
@@ -369,7 +371,7 @@ def compare_T_factories(T_fact_old, T_fact_new, shape=(2, 3, 4, 5, 6, 7),
     std_devs = 3.0
 
     ssy_params = jnp.array(gcy.params)
-    grids = build_grid(gcy, n_h_λ, n_h_c, n_h_z, n_z, n_z_π, n_h_zπ, std_devs)
+    grids = build_grid(gcy, n_h_λ, n_h_c, n_h_z, n_h_zπ, n_z, n_z_π, std_devs)
 
     d = 4
     nodes, weights = qnwnorm([d, d, d, d])
