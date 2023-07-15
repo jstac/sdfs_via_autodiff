@@ -62,10 +62,9 @@ def build_grid(gcy,
     # z' = ρ * z + ρ_π * z_π + σ_z * η0
     h_z_max = num_std_devs * jnp.sqrt(s_z**2 / (1 - ρ_z**2))
     σ_z_max = φ_z * jnp.exp(h_z_max)
-    z_max = zπ_grid[-1] / (1 - ρ) + num_std_devs * σ_z_max
-    z_min = zπ_grid[0] / (1 - ρ) - num_std_devs * σ_z_max
+    z_max = (ρ_π * zπ_grid[-1] + num_std_devs * σ_z_max) / (1 - ρ)
+    z_min = (ρ_π * zπ_grid[0] - num_std_devs * σ_z_max) / (1 - ρ)
     z_grid = jnp.linspace(z_min, z_max, z_grid_size)
-
     return h_λ_grid, h_c_grid, h_z_grid, h_zπ_grid, z_grid, zπ_grid
 
 
@@ -264,7 +263,7 @@ def wc_ratio_continuous(gcy, h_λ_grid_size=10, h_c_grid_size=10,
                         h_z_grid_size=10, h_zπ_grid_size=10, z_grid_size=20,
                         z_π_grid_size=20, num_std_devs=3.2,
                         d=5, mc_draw_size=2000, seed=1234, w_init=None,
-                        ram_free=20, tol=1e-5, method='quadrature',
+                        ram_free=2, tol=1e-5, method='quadrature',
                         algorithm="successive_approx", verbose=True,
                         write_to_file=True, filename='w_star_data.npy'):
     """
@@ -279,6 +278,7 @@ def wc_ratio_continuous(gcy, h_λ_grid_size=10, h_c_grid_size=10,
     if w_init is None:
         w_init = jnp.ones(shape=(h_λ_grid_size, h_c_grid_size, h_z_grid_size,
                                  h_zπ_grid_size, z_grid_size, z_π_grid_size))
+
 
     if algorithm == 'newton':
         scale = 8
@@ -486,5 +486,3 @@ def compare_T_factories(T_fact_old, T_fact_new, shape=(2, 3, 4, 5, 6, 7),
     comparison_result = jnp.asarray([jnp.allclose(*w1) for w1 in
                                      zip(w1_old_list, w1_new_list)])
     print("Same results? {}".format(jnp.all(comparison_result)))
-
-print(wc_ratio_continuous(GCY()))
