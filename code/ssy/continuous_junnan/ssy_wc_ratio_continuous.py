@@ -338,7 +338,7 @@ def compare_T_factories(T_fact_old, T_fact_new, shape=(5, 6, 7, 8),
     grids = build_grid(ssy, hλs, hcs, hzs, zs, std_devs)
 
     d = 4
-    nodes, weights = qnwnorm([d, d, d, d])
+    nodes, weights = qnwnorm([d]*len(grids))
     nodes = jnp.asarray(nodes.T)
     weights = jnp.asarray(weights)
 
