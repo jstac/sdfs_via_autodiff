@@ -27,7 +27,8 @@ def build_grid(gcy,
                z_grid_size,
                z_π_grid_size,
                num_std_devs=3.2):
-    """Build a grid over the tuple (h_λ_vec, h_c_vec, h_z_vec, z_vec) for
+    """Build a grid over the tuple
+    (h_λ_grid, h_c_grid, h_z_grid, h_zπ_grid, z_grid, zπ_grid) for
     linear interpolation.
 
     """
@@ -134,7 +135,7 @@ def Kg_vmap_mc(x, gcy_params, w_vals, grids, mc_draws):
     const = jnp.exp((1 - γ) * (μ_c + z) + (1/2) * (1 - γ)**2 * σ_c**2)
 
     # Ready to kick off the inner loop, which computes
-    # E_x g(h_λ', h_c', h_z', z') exp(θ * h_λ')
+    # E_x g(h_λ', h_c', h_z', h_zπ', z', z_π') exp(θ * h_λ')
     next_x = next_state(gcy_params, x, mc_draws)
     pf = jnp.exp(next_x[0] * θ)
 
@@ -170,7 +171,7 @@ def Kg_vmap_quad(x, gcy_params, w_vals, grids, nodes, weights):
     const = jnp.exp((1 - γ) * (μ_c + z) + (1/2) * (1 - γ)**2 * σ_c**2)
 
     # Ready to kick off the inner loop, which computes
-    # E_x g(h_λ', h_c', h_z', z') exp(θ * h_λ') using Gaussian quadrature:
+    # E_x g(h_λ', h_c', h_z', h_zπ', z', z_π') exp(θ * h_λ') using Gaussian quadrature:
     next_x = next_state(gcy_params, x, nodes)
     pf = jnp.exp(next_x[0] * θ)
 
@@ -263,7 +264,7 @@ def wc_ratio_continuous(gcy, h_λ_grid_size=10, h_c_grid_size=10,
                         h_z_grid_size=10, h_zπ_grid_size=10, z_grid_size=20,
                         z_π_grid_size=20, num_std_devs=3.2,
                         d=5, mc_draw_size=2000, seed=1234, w_init=None,
-                        ram_free=2, tol=1e-5, method='quadrature',
+                        ram_free=20, tol=1e-5, method='quadrature',
                         algorithm="successive_approx", verbose=True,
                         write_to_file=True, filename='w_star_data.npy'):
     """
@@ -274,7 +275,7 @@ def wc_ratio_continuous(gcy, h_λ_grid_size=10, h_c_grid_size=10,
     grids = build_grid(gcy, h_λ_grid_size, h_c_grid_size, h_z_grid_size,
                        h_zπ_grid_size, z_grid_size, z_π_grid_size, num_std_devs)
     dim = len(grids)
-    # h_λ, h_c, h_z, h_zπ, z, z_π = x
+
     if w_init is None:
         w_init = jnp.ones(shape=(h_λ_grid_size, h_c_grid_size, h_z_grid_size,
                                  h_zπ_grid_size, z_grid_size, z_π_grid_size))
