@@ -3,7 +3,7 @@ import jax.numpy as jnp
 import numpy as np
 from functools import partial
 from jax.config import config
-from utils import lin_interp
+
 from quantecon.quad import qnwnorm
 import time
 
@@ -12,6 +12,7 @@ sys.path.append('..')
 from gcy_model import *
 sys.path.append('../..')
 from solvers import solver
+from utils import lin_interp
 
 # Tell JAX to use 64 bit floats
 config.update("jax_enable_x64", True)
