@@ -41,16 +41,10 @@ For ϕ_c and ϕ_d, see the sentence after eq (9).
 
 """
 
-import jax
-import jax.numpy as jnp
-from jax.config import config
-
 import numpy as np
 from scipy.optimize import brentq
-from quantecon import MarkovChain, rouwenhorst
 
-from numba import njit, prange, float32, cuda
-from numpy.random import rand, randn
+from numba import njit
 
 
 class SSY:
@@ -106,8 +100,8 @@ def wc_loglinear_factory(ssy):
         s_z, s_c, s_λ) = ssy.params
     θ = ssy.θ
 
-    s_wc = 2*(φ_c)**2*s_c;
-    s_wx = 2*(φ_z)**2*s_z;
+    s_wc = 2*(φ_c)**2*s_c
+    s_wx = 2*(φ_z)**2*s_z
 
     def fk1(x):
         return np.exp(x)/(1+np.exp(x))
@@ -145,16 +139,16 @@ def wc_loglinear_factory(ssy):
     Ah_c = fAc(qbar)
     A0 = fA0(qbar)
 
-    # Now build a jitted function 
+    # Now build a jitted function
     @njit
     def wc_loglinear(x):
         """
-        Evaluates log-linear solution at state z,h_z,h_c,h_λ
+        Evaluates log-linear solution at state h_λ, h_c, h_z, z
         """
 
         h_λ, h_c, h_z, z = x
-        s_z = h_z*2*(φ_z)**2 + (φ_z)**2;
-        s_c = h_c*2*(φ_c)**2 + (φ_c)**2;
+        s_z = h_z*2*(φ_z)**2 + (φ_z)**2
+        s_c = h_c*2*(φ_c)**2 + (φ_c)**2
 
         return A0 + Ah_λ * h_λ + Ah_c * s_c + Ah_z * s_z + Az * z
 
